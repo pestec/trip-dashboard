@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Map, { Marker, NavigationControl, Popup } from '@vis.gl/react-maplibre';
 import Papa from 'papaparse';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   Building,
   Camera,
+  ChevronDown,
   Church,
   ExternalLink,
   Info,
@@ -29,10 +31,10 @@ const MAP_STYLES = {
 };
 
 /* Inline flags (SVG) to avoid emoji fallback to "SG/MY/ID" on some devices */
-function Flag({ code, className = '' }) {
+function Flag({ code, className = '', preserveAspectRatio = 'xMidYMid meet' }) {
   if (code === 'SG') {
     return (
-      <svg className={className} viewBox="0 0 60 40" aria-label="Singapore flag" role="img">
+      <svg className={className} viewBox="0 0 60 40" preserveAspectRatio={preserveAspectRatio} aria-label="Singapore flag" role="img">
         <rect width="60" height="20" fill="#EF3340" />
         <rect y="20" width="60" height="20" fill="#FFFFFF" />
         {/* crescent + 5 stars (simplified, readable at small sizes) */}
@@ -53,7 +55,7 @@ function Flag({ code, className = '' }) {
 
   if (code === 'MY') {
     return (
-      <svg className={className} viewBox="0 0 60 40" aria-label="Malaysia flag" role="img">
+      <svg className={className} viewBox="0 0 60 40" preserveAspectRatio={preserveAspectRatio} aria-label="Malaysia flag" role="img">
         <rect width="60" height="40" fill="#FFFFFF" />
         {Array.from({ length: 7 }).map((_, i) => (
           <rect key={i} y={i * 6} width="60" height="3" fill="#EF3340" />
@@ -69,7 +71,7 @@ function Flag({ code, className = '' }) {
 
   if (code === 'ID') {
     return (
-      <svg className={className} viewBox="0 0 60 40" aria-label="Indonesia flag" role="img">
+      <svg className={className} viewBox="0 0 60 40" preserveAspectRatio={preserveAspectRatio} aria-label="Indonesia flag" role="img">
         <rect width="60" height="20" fill="#EF3340" />
         <rect y="20" width="60" height="20" fill="#FFFFFF" />
       </svg>
@@ -440,16 +442,19 @@ export default function App() {
       {/* Header */}
       <header className="sticky top-0 z-[1000] mb-2 xs:mb-3 sm:mb-4">
         <div className="mx-auto max-w-7xl px-2 xs:px-3 sm:px-4 pt-2 xs:pt-3 sm:pt-4">
-          <div className="glass-panel-strong rounded-2xl border t-border-strong shadow-2xl">
-            <div className="px-2 xs:px-3 sm:px-4 py-2 xs:py-2.5 sm:py-3 flex items-center justify-between gap-2 xs:gap-3 overflow-x-auto scrollbar-hide">
-              <div className="flex items-center gap-2 xs:gap-3 min-w-0 flex-shrink-0">
-                <Flag code={config.flag} className="w-8 h-5 xs:w-9 xs:h-6 sm:w-10 sm:h-7 rounded-md xs:rounded-lg shadow-sm ring-1 ring-black/10" />
+          <div className="glass-panel-strong rounded-2xl border t-border-strong shadow-2xl overflow-hidden relative">
+            {/* Background flag with low opacity - covers entire header */}
+            <div className="absolute inset-0 opacity-10 pointer-events-none">
+              <Flag code={config.flag} className="w-full h-full" preserveAspectRatio="none" />
+            </div>
 
+            <div className="relative px-2 xs:px-3 sm:px-4 py-2 xs:py-2.5 sm:py-3 flex items-center justify-between gap-2 xs:gap-3 overflow-x-auto scrollbar-hide">
+              <div className="flex items-center gap-2 xs:gap-3 min-w-0 flex-shrink-0">
                 <div className="min-w-0">
                   <h1 className={`text-base xs:text-lg sm:text-xl font-extrabold bg-gradient-to-r ${theme.gradient} bg-clip-text text-transparent`}>
                     {config.name}
                   </h1>
-                  <p className="text-[10px] xs:text-xs t-muted2 truncate">{places.length} places • tap map pins</p>
+                  <p className="text-[10px] xs:text-xs t-muted2 truncate">{places.length} places</p>
                 </div>
 
                 {/* FX + Calculator (moved next to destination) */}
