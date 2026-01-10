@@ -1,17 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Map, { Marker, NavigationControl, Popup } from '@vis.gl/react-maplibre';
 import Papa from 'papaparse';
-import { AnimatePresence, motion } from 'framer-motion';
 import {
   Building,
   Camera,
-  ChevronDown,
   Church,
   ExternalLink,
-  Globe,
   Info,
   LocateFixed,
-  Map as MapIcon,
   MapPin,
   Mountain,
   Navigation,
@@ -206,7 +202,6 @@ export default function App() {
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [expandedPlace, setExpandedPlace] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
-  const [showDestinationPicker, setShowDestinationPicker] = useState(false);
 
   const [colorMode, setColorMode] = useState(() => {
     try {
@@ -220,7 +215,6 @@ export default function App() {
   const [localAmount, setLocalAmount] = useState('');
 
   const mapRef = useRef(null);
-  const destWrapRef = useRef(null);
 
   const config = destinations[destination];
   const theme = config.theme;
@@ -241,28 +235,6 @@ export default function App() {
     } catch {}
   }, [colorMode]);
 
-  // Close destination menu on outside click
-  useEffect(() => {
-    if (!showDestinationPicker) return;
-
-    const onPointerDown = (e) => {
-      const wrap = destWrapRef.current;
-      if (!wrap) return;
-      if (wrap.contains(e.target)) return;
-      setShowDestinationPicker(false);
-    };
-
-    const onKey = (e) => {
-      if (e.key === 'Escape') setShowDestinationPicker(false);
-    };
-
-    window.addEventListener('pointerdown', onPointerDown);
-    window.addEventListener('keydown', onKey);
-    return () => {
-      window.removeEventListener('pointerdown', onPointerDown);
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [showDestinationPicker]);
 
   // Reset calculator when destination changes
   useEffect(() => {
@@ -466,9 +438,9 @@ export default function App() {
       </div>
 
       {/* Header */}
-      <header className="sticky top-0 z-[1000]">
+      <header className="sticky top-0 z-[1000] mb-2 xs:mb-3 sm:mb-4">
         <div className="mx-auto max-w-7xl px-2 xs:px-3 sm:px-4 pt-2 xs:pt-3 sm:pt-4">
-          <div className="glass-panel-strong rounded-2xl border t-border-strong shadow-2xl overflow-visible">
+          <div className="glass-panel-strong rounded-2xl border t-border-strong shadow-2xl">
             <div className="px-2 xs:px-3 sm:px-4 py-2 xs:py-2.5 sm:py-3 flex items-center justify-between gap-2 xs:gap-3 overflow-x-auto scrollbar-hide">
               <div className="flex items-center gap-2 xs:gap-3 min-w-0 flex-shrink-0">
                 <Flag code={config.flag} className="w-8 h-5 xs:w-9 xs:h-6 sm:w-10 sm:h-7 rounded-md xs:rounded-lg shadow-sm ring-1 ring-black/10" />
@@ -511,101 +483,86 @@ export default function App() {
                 <div className="glass-panel rounded-2xl border p-1 flex items-center gap-1" role="group" aria-label="Theme">
                   <button
                     onClick={() => setTheme('light')}
-                    className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-colors ${
+                    className={`px-2 xs:px-3 py-2 rounded-xl flex items-center gap-1.5 xs:gap-2 transition-colors ${
                       isLight ? 'bg-black/10' : 't-hover'
                     }`}
                     title="Light mode"
                     aria-label="Light mode"
                   >
-                    <Sun size={18} />
+                    <Sun size={16} className="xs:hidden" />
+                    <Sun size={18} className="hidden xs:block" />
                     <span className="text-xs xs:text-sm font-semibold hidden md:inline">Light</span>
                   </button>
                   <button
                     onClick={() => setTheme('dark')}
-                    className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-colors ${
+                    className={`px-2 xs:px-3 py-2 rounded-xl flex items-center gap-1.5 xs:gap-2 transition-colors ${
                       !isLight ? 'bg-white/10' : 't-hover'
                     }`}
                     title="Dusk mode"
                     aria-label="Dusk mode"
                   >
-                    <Moon size={18} />
+                    <Moon size={16} className="xs:hidden" />
+                    <Moon size={18} className="hidden xs:block" />
                     <span className="text-xs xs:text-sm font-semibold hidden md:inline">Dusk</span>
                   </button>
                 </div>
 
-                {/* Destination picker */}
-                <div ref={destWrapRef} className="relative">
-                  <button
-                    onClick={() => setShowDestinationPicker((v) => !v)}
-                    className="glass-panel rounded-xl border px-3 xs:px-4 py-2 flex items-center gap-1.5 xs:gap-2 t-hover transition-colors min-h-[44px]"
-                  >
-                    <MapIcon size={16} className="xs:hidden" />
-                    <MapIcon size={18} className="hidden xs:block" />
-                    <span className="text-xs xs:text-sm font-semibold hidden md:inline">Destinations</span>
-                    <ChevronDown size={14} className="xs:hidden transition-transform" style={{ transform: showDestinationPicker ? 'rotate(180deg)' : 'rotate(0)' }} />
-                    <ChevronDown size={16} className="hidden xs:block transition-transform" style={{ transform: showDestinationPicker ? 'rotate(180deg)' : 'rotate(0)' }} />
-                  </button>
-
-                  <AnimatePresence>
-                    {showDestinationPicker && (
-                      <motion.div
-                        key="dest-menu"
-                        initial={{ opacity: 0, y: -10, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                        className="absolute right-0 top-full mt-2 w-[calc(100vw-1rem)] xs:w-72 sm:w-80 max-w-[320px] z-[1100] glass-panel-strong rounded-2xl border overflow-hidden shadow-2xl"
+                {/* Destination switcher - show other 2 destinations */}
+                <div className="glass-panel rounded-2xl border p-1 flex items-center gap-1" role="group" aria-label="Destinations">
+                  {Object.entries(destinations)
+                    .filter(([key]) => key !== destination)
+                    .map(([key, dest]) => (
+                      <button
+                        key={key}
+                        onClick={() => setDestination(key)}
+                        className="px-2 xs:px-3 py-2 rounded-xl flex items-center gap-1.5 xs:gap-2 t-hover transition-colors min-h-[44px]"
+                        title={`Switch to ${dest.name}`}
+                        aria-label={`Switch to ${dest.name}`}
                       >
-                        {Object.entries(destinations).map(([key, dest]) => (
-                          <button
-                            key={key}
-                            onClick={() => {
-                              setDestination(key);
-                              setShowDestinationPicker(false);
-                            }}
-                            className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
-                              destination === key ? rowSelectedClass : ''
-                            } ${rowHoverClass}`}
-                          >
-                            <Flag code={dest.flag} className="w-8 h-5 rounded-md shadow-sm ring-1 ring-black/10" />
-                            <span className="font-semibold">{dest.name}</span>
-                            {destination === key && <span className="ml-auto text-emerald-500">✓</span>}
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-            </div>
-
-            {/* Mobile FX + Calculator row */}
-            <div className="lg:hidden px-2 xs:px-3 sm:px-4 pb-2 xs:pb-2.5 sm:pb-3">
-              <div className="flex items-center gap-1.5 xs:gap-2 flex-wrap">
-                <div
-                  className="glass-panel rounded-xl border px-3 py-2 flex items-center gap-2"
-                  title={fx.asOf ? `As of ${fx.asOf}` : undefined}
-                >
-                  <span className="text-xs font-extrabold t-muted2">FX</span>
-                  <span className="text-xs font-semibold t-muted">{fxLabel}</span>
-                </div>
-
-                <div className="glass-panel rounded-xl border px-3 py-2 flex items-center gap-2">
-                  <span className="text-xs font-extrabold t-muted2">{config.currency}</span>
-                  <input
-                    inputMode="decimal"
-                    value={localAmount}
-                    onChange={(e) => setLocalAmount(e.target.value)}
-                    placeholder="Amount"
-                    className="w-20 xs:w-24 sm:w-28 rounded-lg border outline-none px-2 py-1 text-xs t-input min-h-[44px]"
-                    aria-label="Local currency amount"
-                  />
-                  <span className="text-xs t-muted3">≈</span>
-                  <span className="text-xs font-semibold t-muted tabular-nums">{gbpCalcLabel}</span>
+                        <Flag code={dest.flag} className="w-5 h-3 xs:w-6 xs:h-4 sm:w-7 sm:h-5 rounded shadow-sm ring-1 ring-black/10" />
+                        <span className="text-xs xs:text-sm font-semibold hidden lg:inline">{dest.name}</span>
+                      </button>
+                    ))}
                 </div>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Mobile FX + Calculator - Outside header */}
+        <div className="lg:hidden mx-auto max-w-7xl px-2 xs:px-3 sm:px-4 mt-2">
+          <div className="glass-panel rounded-2xl border p-2 xs:p-3 shadow-lg">
+            <div className="grid grid-cols-2 gap-2">
+              <div
+                className="glass-panel rounded-xl border px-3 py-2 flex items-center justify-center gap-2"
+                title={fx.asOf ? `As of ${fx.asOf}` : undefined}
+              >
+                <span className="text-xs font-extrabold t-muted2">FX</span>
+                <span className="text-xs font-semibold t-muted">{fxLabel}</span>
+              </div>
+
+              <div className="glass-panel rounded-xl border px-2 py-2 min-w-0">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1 min-w-0">
+                    <span className="text-xs font-extrabold t-muted2 flex-shrink-0">{config.currency}</span>
+                    <input
+                      inputMode="decimal"
+                      value={localAmount}
+                      onChange={(e) => setLocalAmount(e.target.value)}
+                      placeholder="Amount"
+                      className="flex-1 min-w-0 w-full rounded-lg border outline-none px-2 py-1 text-xs t-input min-h-[36px]"
+                      aria-label="Local currency amount"
+                    />
+                  </div>
+                  <div className="text-[10px] xs:text-xs t-muted2 text-center truncate">
+                    ≈ <span className="font-semibold tabular-nums">{gbpCalcLabel}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </header>
 
       {/* Layout */}
