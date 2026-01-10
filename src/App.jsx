@@ -11,6 +11,7 @@ import {
   Globe,
   Info,
   LocateFixed,
+  Map as MapIcon,
   MapPin,
   Mountain,
   Navigation,
@@ -450,7 +451,7 @@ export default function App() {
 
   return (
     <div
-      className="min-h-screen t-bg t-fg transition-colors duration-500 noise"
+      className="min-h-screen t-bg t-fg transition-colors duration-500 noise overflow-x-hidden"
       style={{
         paddingTop: 'var(--safe-area-top)',
         paddingBottom: 'var(--safe-area-bottom)',
@@ -467,8 +468,8 @@ export default function App() {
       {/* Header */}
       <header className="sticky top-0 z-[1000]">
         <div className="mx-auto max-w-7xl px-2 xs:px-3 sm:px-4 pt-2 xs:pt-3 sm:pt-4">
-          <div className="glass-panel-strong rounded-2xl border t-border-strong shadow-2xl">
-            <div className="px-2 xs:px-3 sm:px-4 py-2 xs:py-2.5 sm:py-3 flex flex-wrap xs:flex-nowrap items-center justify-between gap-2 xs:gap-3">
+          <div className="glass-panel-strong rounded-2xl border t-border-strong shadow-2xl overflow-visible">
+            <div className="px-2 xs:px-3 sm:px-4 py-2 xs:py-2.5 sm:py-3 flex items-center justify-between gap-2 xs:gap-3 overflow-x-auto scrollbar-hide">
               <div className="flex items-center gap-2 xs:gap-3 min-w-0 flex-shrink-0">
                 <Flag code={config.flag} className="w-8 h-5 xs:w-9 xs:h-6 sm:w-10 sm:h-7 rounded-md xs:rounded-lg shadow-sm ring-1 ring-black/10" />
 
@@ -538,8 +539,8 @@ export default function App() {
                     onClick={() => setShowDestinationPicker((v) => !v)}
                     className="glass-panel rounded-xl border px-3 xs:px-4 py-2 flex items-center gap-1.5 xs:gap-2 t-hover transition-colors min-h-[44px]"
                   >
-                    <Globe size={16} className="xs:hidden" />
-                    <Globe size={18} className="hidden xs:block" />
+                    <MapIcon size={16} className="xs:hidden" />
+                    <MapIcon size={18} className="hidden xs:block" />
                     <span className="text-xs xs:text-sm font-semibold hidden md:inline">Destinations</span>
                     <ChevronDown size={14} className="xs:hidden transition-transform" style={{ transform: showDestinationPicker ? 'rotate(180deg)' : 'rotate(0)' }} />
                     <ChevronDown size={16} className="hidden xs:block transition-transform" style={{ transform: showDestinationPicker ? 'rotate(180deg)' : 'rotate(0)' }} />
@@ -609,9 +610,9 @@ export default function App() {
 
       {/* Layout */}
       <main className="mx-auto max-w-7xl px-2 xs:px-3 sm:px-4 pb-4 xs:pb-6 sm:pb-8 pt-2 xs:pt-3 sm:pt-4">
-        <div className="grid gap-4 lg:grid-cols-[420px_1fr]">
+        <div className="grid gap-4 lg:grid-cols-[420px_1fr] w-full overflow-hidden">
           {/* Sidebar */}
-          <section className="order-2 lg:order-1 space-y-4">
+          <section className="order-2 lg:order-1 space-y-4 w-full min-w-0">
             {/* Search */}
             <div className="glass-panel rounded-2xl border p-3 shadow-2xl">
               <div className="relative">
@@ -784,7 +785,7 @@ export default function App() {
           </section>
 
           {/* Map */}
-          <section className="order-1 lg:order-2">
+          <section className="order-1 lg:order-2 w-full min-w-0">
             <div
               className="relative overflow-hidden rounded-3xl border t-border shadow-2xl"
               style={{
@@ -793,7 +794,7 @@ export default function App() {
                   : '0 30px 90px rgba(0,0,0,0.50), 0 0 0 1px rgba(255,255,255,0.06) inset',
               }}
             >
-              <div className="h-[42vh] min-h-[280px] xs:h-[44vh] xs:min-h-[300px] sm:h-[45vh] sm:min-h-[320px] lg:h-[calc(100vh-170px)]">
+              <div className="h-[42vh] min-h-[280px] xs:h-[44vh] xs:min-h-[300px] sm:h-[45vh] sm:min-h-[320px] lg:h-[calc(100vh-170px)] w-full overflow-hidden">
                 {!loading && (
                   <Map
                     ref={mapRef}
