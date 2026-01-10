@@ -1,0 +1,16 @@
+id,name,description,price,priceRange,lat,lng,notes,category,googleMapsUrl
+1,Tanah Lot Temple,Iconic sea temple on rock,IDR 60k,1,-8.6212,115.0867,Best at sunset; can get crowded.,Temple,https://www.google.com/maps/search/Tanah+Lot+Temple+Bali
+2,Uluwatu Temple,Clifftop temple with monkeys,IDR 50k,1,-8.8291,115.0849,Kecak fire dance at sunset is must-see.,Temple,https://www.google.com/maps/search/Uluwatu+Temple+Bali
+3,Tegallalang Rice Terraces,Stunning green rice paddies,IDR 15k,0,-8.4312,115.2792,Go early morning to avoid crowds and heat.,Nature,https://www.google.com/maps/search/Tegallalang+Rice+Terraces+Bali
+4,Ubud Monkey Forest,Sacred forest with macaques,IDR 80k,1,-8.5186,115.2588,Hide belongings; monkeys grab everything!,Nature,https://www.google.com/maps/search/Sacred+Monkey+Forest+Ubud
+5,Tirta Empul Temple,Holy water spring temple,IDR 50k,1,-8.4153,115.3153,Bring sarong for purification ritual.,Temple,https://www.google.com/maps/search/Tirta+Empul+Temple+Bali
+6,Seminyak Beach,Trendy beach with beach clubs,Free,0,-8.6914,115.1564,Great for sunset drinks; Potato Head club nearby.,Beach,https://www.google.com/maps/search/Seminyak+Beach+Bali
+7,Nusa Penida,Island with dramatic cliffs,IDR 200k boat,2,-8.7275,115.5444,Day trip; Kelingking Beach is iconic.,Nature,https://www.google.com/maps/search/Nusa+Penida+Bali
+8,Ubud Art Market,Traditional crafts market,Free,0,-8.5069,115.2625,Bargain expected; best prices early morning.,Shopping,https://www.google.com/maps/search/Ubud+Art+Market+Bali
+9,Kuta Beach,Popular tourist beach,Free,0,-8.7184,115.1686,Good for surfing beginners; can be crowded.,Beach,https://www.google.com/maps/search/Kuta+Beach+Bali
+10,Waterbom Bali,Water park,IDR 535k,3,-8.7265,115.1693,Book online for discounts; full day needed.,Activity,https://www.google.com/maps/search/Waterbom+Bali
+11,Mount Batur Sunrise,Volcano sunrise trek,IDR 500k,2,-8.2414,115.3753,Start at 2am; guide required; bring warm clothes.,Nature,https://www.google.com/maps/search/Mount+Batur+Bali
+12,Besakih Temple,Largest Hindu temple in Bali,IDR 60k,1,-8.3744,115.4517,Mother Temple; hire official guide only.,Temple,https://www.google.com/maps/search/Besakih+Temple+Bali
+13,La Favela,Trendy restaurant and bar,IDR 200-400k,2,-8.6866,115.1617,Great for dinner and nightlife; book ahead.,Food,https://www.google.com/maps/search/La+Favela+Bali
+14,Warung Babi Guling Ibu Oka,Famous roast pork,IDR 50-80k,1,-8.5062,115.2628,Anthony Bourdain favorite; lunch only.,Food,https://www.google.com/maps/search/Warung+Babi+Guling+Ibu+Oka+Ubud
+15,Canggu,Hip area with cafes and surf,Free,0,-8.6478,115.1385,Best for digital nomads; great coffee scene.,Beach,https://www.google.com/maps/search/Canggu+Bali
