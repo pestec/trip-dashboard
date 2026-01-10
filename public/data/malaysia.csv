@@ -1,0 +1,13 @@
+id,name,description,price,priceRange,lat,lng,notes,category,googleMapsUrl
+1,Petronas Twin Towers,Iconic 88-floor twin skyscrapers,RM98,2,3.1578,101.7117,Book observation deck tickets online in advance.,Sightseeing,https://www.google.com/maps/search/Petronas+Twin+Towers+Kuala+Lumpur
+2,Batu Caves,Hindu temple in limestone caves,Free,0,3.2379,101.6831,272 steps to climb; wear comfortable shoes.,Sightseeing,https://www.google.com/maps/search/Batu+Caves+Malaysia
+3,KL Tower,Telecommunications tower with views,RM52,2,3.1528,101.7036,Sky deck offers 360° views; less crowded than Petronas.,Sightseeing,https://www.google.com/maps/search/KL+Tower+Kuala+Lumpur
+4,Jalan Alor,Famous street food paradise,RM20-50,1,3.1456,101.7089,Go after 6pm; try chicken wings and satay.,Food,https://www.google.com/maps/search/Jalan+Alor+Kuala+Lumpur
+5,Central Market,Historic art deco market,Free,0,3.1456,101.6953,Good for souvenirs and local crafts.,Shopping,https://www.google.com/maps/search/Central+Market+Kuala+Lumpur
+6,Merdeka Square,Historic independence square,Free,0,3.1481,101.6936,Best photos at sunrise; surrounded by colonial buildings.,Sightseeing,https://www.google.com/maps/search/Merdeka+Square+Kuala+Lumpur
+7,Islamic Arts Museum,Largest Islamic arts museum in SE Asia,RM20,1,3.1422,101.6878,Beautiful architecture; allow 2-3 hours.,Culture,https://www.google.com/maps/search/Islamic+Arts+Museum+Malaysia
+8,Thean Hou Temple,Six-tiered Chinese temple,Free,0,3.1228,101.6861,Stunning at night; great city views.,Culture,https://www.google.com/maps/search/Thean+Hou+Temple+Kuala+Lumpur
+9,Bukit Bintang,Shopping and entertainment district,Free,0,3.1466,101.7108,Main shopping area; Pavilion and Lot 10 malls.,Shopping,https://www.google.com/maps/search/Bukit+Bintang+Kuala+Lumpur
+10,Petaling Street,Chinatown market street,RM10-30,1,3.1453,101.6983,Bargain hard; best for street food at night.,Food,https://www.google.com/maps/search/Petaling+Street+Kuala+Lumpur
+11,KLCC Park,Urban park at Petronas base,Free,0,3.1558,101.7117,Fountain show at night; nice for evening walks.,Nature,https://www.google.com/maps/search/KLCC+Park+Kuala+Lumpur
+12,Aquaria KLCC,Underwater tunnel aquarium,RM75,2,3.1530,101.7115,Good for families; feeding sessions are popular.,Sightseeing,https://www.google.com/maps/search/Aquaria+KLCC+Kuala+Lumpur
