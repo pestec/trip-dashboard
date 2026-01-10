@@ -449,7 +449,15 @@ export default function App() {
   const setTheme = useCallback((mode) => setColorMode(mode), []);
 
   return (
-    <div className="min-h-screen t-bg t-fg transition-colors duration-500 noise">
+    <div
+      className="min-h-screen t-bg t-fg transition-colors duration-500 noise"
+      style={{
+        paddingTop: 'var(--safe-area-top)',
+        paddingBottom: 'var(--safe-area-bottom)',
+        paddingLeft: 'var(--safe-area-left)',
+        paddingRight: 'var(--safe-area-right)',
+      }}
+    >
       {/* Backdrop */}
       <div className="pointer-events-none fixed inset-0">
         <div className="absolute inset-0 opacity-70" style={{ background: neutralBackdrop }} />
@@ -458,21 +466,21 @@ export default function App() {
 
       {/* Header */}
       <header className="sticky top-0 z-[1000]">
-        <div className="mx-auto max-w-7xl px-4 pt-4">
+        <div className="mx-auto max-w-7xl px-2 xs:px-3 sm:px-4 pt-2 xs:pt-3 sm:pt-4">
           <div className="glass-panel-strong rounded-2xl border t-border-strong shadow-2xl">
-            <div className="px-4 py-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <Flag code={config.flag} className="w-10 h-7 rounded-lg shadow-sm ring-1 ring-black/10" />
+            <div className="px-2 xs:px-3 sm:px-4 py-2 xs:py-2.5 sm:py-3 flex flex-wrap xs:flex-nowrap items-center justify-between gap-2 xs:gap-3">
+              <div className="flex items-center gap-2 xs:gap-3 min-w-0 flex-shrink-0">
+                <Flag code={config.flag} className="w-8 h-5 xs:w-9 xs:h-6 sm:w-10 sm:h-7 rounded-md xs:rounded-lg shadow-sm ring-1 ring-black/10" />
 
                 <div className="min-w-0">
-                  <h1 className={`text-xl font-extrabold bg-gradient-to-r ${theme.gradient} bg-clip-text text-transparent`}>
+                  <h1 className={`text-base xs:text-lg sm:text-xl font-extrabold bg-gradient-to-r ${theme.gradient} bg-clip-text text-transparent`}>
                     {config.name}
                   </h1>
-                  <p className="text-xs t-muted2">{places.length} places • tap map pins</p>
+                  <p className="text-[10px] xs:text-xs t-muted2 truncate">{places.length} places • tap map pins</p>
                 </div>
 
                 {/* FX + Calculator (moved next to destination) */}
-                <div className="hidden md:flex items-center gap-2 flex-shrink-0">
+                <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
                   <div
                     className="glass-panel rounded-xl border px-3 py-2 flex items-center gap-2"
                     title={fx.asOf ? `As of ${fx.asOf}` : undefined}
@@ -488,7 +496,7 @@ export default function App() {
                       value={localAmount}
                       onChange={(e) => setLocalAmount(e.target.value)}
                       placeholder="Amount"
-                      className="w-[110px] rounded-lg border outline-none px-2 py-1 text-xs t-input"
+                      className="w-20 xs:w-24 sm:w-28 lg:w-[110px] rounded-lg border outline-none px-2 py-1 text-xs t-input"
                       aria-label="Local currency amount"
                     />
                     <span className="text-xs t-muted3">≈</span>
@@ -509,7 +517,7 @@ export default function App() {
                     aria-label="Light mode"
                   >
                     <Sun size={18} />
-                    <span className="text-sm font-semibold hidden sm:inline">Light</span>
+                    <span className="text-xs xs:text-sm font-semibold hidden md:inline">Light</span>
                   </button>
                   <button
                     onClick={() => setTheme('dark')}
@@ -520,7 +528,7 @@ export default function App() {
                     aria-label="Dusk mode"
                   >
                     <Moon size={18} />
-                    <span className="text-sm font-semibold hidden sm:inline">Dusk</span>
+                    <span className="text-xs xs:text-sm font-semibold hidden md:inline">Dusk</span>
                   </button>
                 </div>
 
@@ -528,11 +536,13 @@ export default function App() {
                 <div ref={destWrapRef} className="relative">
                   <button
                     onClick={() => setShowDestinationPicker((v) => !v)}
-                    className="glass-panel rounded-xl border px-4 py-2 flex items-center gap-2 t-hover transition-colors"
+                    className="glass-panel rounded-xl border px-3 xs:px-4 py-2 flex items-center gap-1.5 xs:gap-2 t-hover transition-colors min-h-[44px]"
                   >
-                    <Globe size={18} />
-                    <span className="text-sm font-semibold hidden sm:inline">Destinations</span>
-                    <ChevronDown size={16} className={`transition-transform ${showDestinationPicker ? 'rotate-180' : ''}`} />
+                    <Globe size={16} className="xs:hidden" />
+                    <Globe size={18} className="hidden xs:block" />
+                    <span className="text-xs xs:text-sm font-semibold hidden md:inline">Destinations</span>
+                    <ChevronDown size={14} className="xs:hidden transition-transform" style={{ transform: showDestinationPicker ? 'rotate(180deg)' : 'rotate(0)' }} />
+                    <ChevronDown size={16} className="hidden xs:block transition-transform" style={{ transform: showDestinationPicker ? 'rotate(180deg)' : 'rotate(0)' }} />
                   </button>
 
                   <AnimatePresence>
@@ -542,7 +552,7 @@ export default function App() {
                         initial={{ opacity: 0, y: -10, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                        className="absolute right-0 top-full mt-2 w-[260px] z-[1100] glass-panel-strong rounded-2xl border overflow-hidden shadow-2xl"
+                        className="absolute right-0 top-full mt-2 w-[calc(100vw-1rem)] xs:w-72 sm:w-80 max-w-[320px] z-[1100] glass-panel-strong rounded-2xl border overflow-hidden shadow-2xl"
                       >
                         {Object.entries(destinations).map(([key, dest]) => (
                           <button
@@ -568,8 +578,8 @@ export default function App() {
             </div>
 
             {/* Mobile FX + Calculator row */}
-            <div className="md:hidden px-4 pb-3">
-              <div className="flex items-center gap-2 flex-wrap">
+            <div className="lg:hidden px-2 xs:px-3 sm:px-4 pb-2 xs:pb-2.5 sm:pb-3">
+              <div className="flex items-center gap-1.5 xs:gap-2 flex-wrap">
                 <div
                   className="glass-panel rounded-xl border px-3 py-2 flex items-center gap-2"
                   title={fx.asOf ? `As of ${fx.asOf}` : undefined}
@@ -585,7 +595,7 @@ export default function App() {
                     value={localAmount}
                     onChange={(e) => setLocalAmount(e.target.value)}
                     placeholder="Amount"
-                    className="w-[120px] rounded-lg border outline-none px-2 py-1 text-xs t-input"
+                    className="w-20 xs:w-24 sm:w-28 rounded-lg border outline-none px-2 py-1 text-xs t-input min-h-[44px]"
                     aria-label="Local currency amount"
                   />
                   <span className="text-xs t-muted3">≈</span>
@@ -598,7 +608,7 @@ export default function App() {
       </header>
 
       {/* Layout */}
-      <main className="mx-auto max-w-7xl px-4 pb-8 pt-4">
+      <main className="mx-auto max-w-7xl px-2 xs:px-3 sm:px-4 pb-4 xs:pb-6 sm:pb-8 pt-2 xs:pt-3 sm:pt-4">
         <div className="grid gap-4 lg:grid-cols-[420px_1fr]">
           {/* Sidebar */}
           <section className="order-2 lg:order-1 space-y-4">
@@ -626,7 +636,7 @@ export default function App() {
                     <button
                       key={cat}
                       onClick={() => setActiveCategory(cat)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap transition-all flex-shrink-0 text-sm font-semibold ${
+                      className={`flex items-center gap-2 px-3 xs:px-4 py-2.5 rounded-full whitespace-nowrap transition-all flex-shrink-0 text-sm font-semibold ${
                         isActive ? 'text-white shadow-2xl' : 't-chip'
                       }`}
                       style={isActive ? { backgroundColor: color } : undefined}
@@ -647,7 +657,7 @@ export default function App() {
                 <p className="text-xs t-muted2">{filteredPlaces.length} shown</p>
               </div>
 
-              <div className="max-h-[52vh] lg:max-h-[calc(100vh-260px)] overflow-y-auto custom-scrollbar">
+              <div className="max-h-[calc(50vh-2rem)] sm:max-h-[calc(52vh-2rem)] lg:max-h-[calc(100vh-260px)] overflow-y-auto custom-scrollbar">
                 {filteredPlaces.map((place, index) => {
                   const isSelected = selectedPlace?.id === place.id;
                   const isExpanded = expandedPlace === place.id;
@@ -783,7 +793,7 @@ export default function App() {
                   : '0 30px 90px rgba(0,0,0,0.50), 0 0 0 1px rgba(255,255,255,0.06) inset',
               }}
             >
-              <div className="h-[45vh] min-h-[320px] lg:h-[calc(100vh-170px)]">
+              <div className="h-[42vh] min-h-[280px] xs:h-[44vh] xs:min-h-[300px] sm:h-[45vh] sm:min-h-[320px] lg:h-[calc(100vh-170px)]">
                 {!loading && (
                   <Map
                     ref={mapRef}
@@ -837,10 +847,10 @@ export default function App() {
                         anchor="top"
                         closeButton={false}
                         closeOnClick={false}
-                        maxWidth="320px"
+                        maxWidth="min(90vw, 320px)"
                         offset={14}
                       >
-                        <div className="glass-panel-strong rounded-2xl border p-3 shadow-2xl">
+                        <div className="glass-panel-strong rounded-xl xs:rounded-2xl border p-2 xs:p-3 shadow-2xl">
                           <div className="flex items-start gap-3">
                             <div className="flex-1">
                               <p className="font-extrabold leading-tight">{selectedPlace.name}</p>
