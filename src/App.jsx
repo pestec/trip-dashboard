@@ -18,6 +18,7 @@ import {
   Search,
   ShoppingBag,
   Sparkles,
+  Star,
   Sun,
   Ticket,
   TreePine,
@@ -95,6 +96,7 @@ const destinations = {
     flag: 'SG',
     currency: 'SGD',
     timezone: 'GMT+8',
+    timezoneOffset: 8,
     center: [1.29, 103.85],
     zoom: 12,
     dataFile: 'singapore.csv',
@@ -116,6 +118,7 @@ const destinations = {
     flag: 'MY',
     currency: 'MYR',
     timezone: 'GMT+8',
+    timezoneOffset: 8,
     center: [3.139, 101.6869],
     zoom: 12,
     dataFile: 'malaysia.csv',
@@ -137,6 +140,7 @@ const destinations = {
     flag: 'ID',
     currency: 'IDR',
     timezone: 'GMT+8',
+    timezoneOffset: 8,
     center: [-8.4095, 115.1889],
     zoom: 10,
     dataFile: 'bali.csv',
@@ -208,6 +212,7 @@ export default function App() {
   const [expandedPlace, setExpandedPlace] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [showNearby, setShowNearby] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   const [colorMode, setColorMode] = useState(() => {
     try {
@@ -313,6 +318,37 @@ export default function App() {
     return formatGbp(gbpCalculated);
   }, [localAmount, fx.rate, gbpCalculated]);
 
+  // Update local time every minute
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Calculate local time for the destination
+  const getLocalTime = useMemo(() => {
+    const now = currentTime;
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const localTime = new Date(utc + (3600000 * config.timezoneOffset));
+
+    const hours = localTime.getHours().toString().padStart(2, '0');
+    const minutes = localTime.getMinutes().toString().padStart(2, '0');
+
+    return `${hours}:${minutes}`;
+  }, [currentTime, config.timezoneOffset]);
+
+  // Calculate time difference from user's timezone
+  const getTimeDiff = useMemo(() => {
+    const userOffset = -new Date().getTimezoneOffset() / 60;
+    const diff = config.timezoneOffset - userOffset;
+
+    if (diff === 0) return 'Same time';
+    const sign = diff > 0 ? '+' : '';
+    return `${sign}${diff}h`;
+  }, [config.timezoneOffset]);
+
   // Load CSV data
   useEffect(() => {
     setLoading(true);
@@ -343,6 +379,7 @@ export default function App() {
                 lat: Number.parseFloat(row.lat),
                 lng: Number.parseFloat(row.lng),
                 priceRange: Number.parseInt(row.priceRange, 10) || 0,
+                rating: Number.parseFloat(row.rating) || null,
               }))
               .filter((row) => Number.isFinite(row.lat) && Number.isFinite(row.lng));
 
@@ -524,13 +561,14 @@ export default function App() {
                       {config.name}
                     </h1>
                   </div>
-                  <div className="flex items-center gap-3 text-xs t-muted2 mt-0.5">
-                    <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2 text-xs t-muted2 mt-0.5 flex-wrap">
+                    <div className="flex items-center gap-1.5">
                       <Clock size={12} className="flex-shrink-0" />
-                      <span className="font-semibold">{config.timezone}</span>
+                      <span className="font-bold tabular-nums">{getLocalTime}</span>
+                      <span className="font-medium opacity-70">({getTimeDiff})</span>
                     </div>
-                    <span>•</span>
-                    <span>{places.length} places</span>
+                    <span className="hidden xs:inline">•</span>
+                    <span className="hidden xs:inline">{places.length} places</span>
                   </div>
                 </div>
               </div>
@@ -732,38 +770,53 @@ export default function App() {
                             className="overflow-hidden"
                           >
                             <div className="px-4 pb-4">
-                              <div className={`rounded-2xl p-4 ${isLight ? 'bg-black/[0.02]' : 'bg-white/[0.03]'} border t-border`}>
-                                {/* Notes Section */}
-                                <div className="mb-4">
-                                  <div className="flex items-start gap-2 mb-2">
-                                    <Info size={16} className="flex-shrink-0 mt-0.5" style={{ color }} />
-                                    <span className="text-xs font-bold uppercase tracking-wide t-muted3">Details</span>
-                                  </div>
-                                  <p className="text-sm t-muted leading-relaxed pl-6">{place.notes}</p>
-                                </div>
+                              <div className={`rounded-2xl overflow-hidden ${isLight ? 'bg-gradient-to-br from-black/[0.02] to-black/[0.04]' : 'bg-gradient-to-br from-white/[0.03] to-white/[0.05]'} border t-border shadow-sm`}>
 
-                                {/* Category & Action Row */}
-                                <div className="flex items-center justify-between gap-3 pl-6">
-                                  {/* Category Badge */}
-                                  <span
-                                    className="px-3 py-1.5 rounded-full text-xs font-bold text-white shadow-sm"
-                                    style={{ backgroundColor: color }}
-                                  >
+                                {/* Category Header with Icon */}
+                                <div className="px-4 pt-3 pb-2 flex items-center gap-2 border-b t-border">
+                                  <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ backgroundColor: `${color}20` }}>
+                                    <Icon size={18} style={{ color }} />
+                                  </div>
+                                  <span className="text-xs font-extrabold uppercase tracking-wider" style={{ color }}>
                                     {place.category}
                                   </span>
+                                </div>
 
-                                  {/* Google Maps Icon Button */}
-                                  <a
-                                    href={place.googleMapsUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-sm hover:shadow-md"
-                                    style={{ backgroundColor: theme.primary }}
-                                    title="Open in Google Maps"
-                                  >
-                                    <Navigation size={18} className="text-white" />
-                                  </a>
+                                {/* Content Section */}
+                                <div className="p-4 space-y-3">
+
+                                  {/* Notes/Description */}
+                                  <div>
+                                    <p className="text-sm t-muted leading-relaxed">{place.notes}</p>
+                                  </div>
+
+                                  {/* Rating & Action Row */}
+                                  <div className="flex items-center justify-between gap-3 pt-2">
+                                    {/* Rating */}
+                                    {place.rating ? (
+                                      <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl" style={{ backgroundColor: `${color}08` }}>
+                                        <Star size={16} className="fill-yellow-400 text-yellow-400 flex-shrink-0" />
+                                        <span className="text-sm font-bold tabular-nums">{place.rating.toFixed(1)}</span>
+                                      </div>
+                                    ) : (
+                                      <div className="px-4 py-2" />
+                                    )}
+
+                                    {/* Google Maps Button */}
+                                    <a
+                                      href={place.googleMapsUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm text-white transition-all shadow-sm hover:shadow-md hover:scale-105"
+                                      style={{ backgroundColor: theme.primary }}
+                                      title="Open in Google Maps"
+                                    >
+                                      <Navigation size={16} />
+                                      <span className="hidden xs:inline">Directions</span>
+                                    </a>
+                                  </div>
+
                                 </div>
                               </div>
                             </div>
@@ -881,6 +934,15 @@ export default function App() {
                             <div className="flex-1">
                               <p className="font-extrabold leading-tight">{selectedPlace.name}</p>
                               <p className="text-sm t-muted2 mt-0.5">{selectedPlace.description}</p>
+
+                              {/* Rating */}
+                              {selectedPlace.rating && (
+                                <div className="flex items-center gap-1 mt-2">
+                                  <Star size={14} className="fill-yellow-400 text-yellow-400" />
+                                  <span className="text-xs font-bold">{selectedPlace.rating.toFixed(1)}</span>
+                                  <span className="text-[10px] t-muted2">Google Maps</span>
+                                </div>
+                              )}
                             </div>
                             <button
                               onClick={() => setSelectedPlace(null)}
