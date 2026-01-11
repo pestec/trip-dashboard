@@ -7,7 +7,8 @@ import {
   Camera,
   ChevronDown,
   Church,
-  ExternalLink,
+  Clock,
+  Globe2,
   Info,
   LocateFixed,
   MapPin,
@@ -93,6 +94,7 @@ const destinations = {
     name: 'Singapore',
     flag: 'SG',
     currency: 'SGD',
+    timezone: 'GMT+8',
     center: [1.29, 103.85],
     zoom: 12,
     dataFile: 'singapore.csv',
@@ -102,17 +104,18 @@ const destinations = {
       gradient: 'from-red-500 to-rose-300',
     },
     categories: {
-      Sightseeing: { icon: Camera, color: '#60A5FA' },
-      Nature: { icon: TreePine, color: '#34D399' },
-      Shows: { icon: Sparkles, color: '#C084FC' },
-      Sentosa: { icon: Palmtree, color: '#F59E0B' },
+      Landmark: { icon: Camera, color: '#60A5FA' },
+      Attraction: { icon: Sparkles, color: '#C084FC' },
       Food: { icon: Utensils, color: '#FB7185' },
+      Adventure: { icon: Ticket, color: '#F59E0B' },
+      Culture: { icon: Church, color: '#A78BFA' },
     },
   },
   malaysia: {
     name: 'Malaysia',
     flag: 'MY',
     currency: 'MYR',
+    timezone: 'GMT+8',
     center: [3.139, 101.6869],
     zoom: 12,
     dataFile: 'malaysia.csv',
@@ -122,10 +125,10 @@ const destinations = {
       gradient: 'from-blue-400 to-yellow-300',
     },
     categories: {
-      Sightseeing: { icon: Building, color: '#60A5FA' },
+      Landmark: { icon: Building, color: '#60A5FA' },
       Culture: { icon: Church, color: '#C084FC' },
-      Nature: { icon: TreePine, color: '#34D399' },
       Food: { icon: Utensils, color: '#FB7185' },
+      Attraction: { icon: Sparkles, color: '#A78BFA' },
       Shopping: { icon: ShoppingBag, color: '#F59E0B' },
     },
   },
@@ -133,6 +136,7 @@ const destinations = {
     name: 'Bali',
     flag: 'ID',
     currency: 'IDR',
+    timezone: 'GMT+8',
     center: [-8.4095, 115.1889],
     zoom: 10,
     dataFile: 'bali.csv',
@@ -145,9 +149,8 @@ const destinations = {
       Temple: { icon: Church, color: '#C084FC' },
       Nature: { icon: Mountain, color: '#34D399' },
       Beach: { icon: Waves, color: '#60A5FA' },
-      Food: { icon: Utensils, color: '#FB7185' },
-      Shopping: { icon: ShoppingBag, color: '#F59E0B' },
-      Activity: { icon: Ticket, color: '#FB923C' },
+      Adventure: { icon: Ticket, color: '#F59E0B' },
+      Culture: { icon: Church, color: '#A78BFA' },
     },
   },
 };
@@ -204,6 +207,7 @@ export default function App() {
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [expandedPlace, setExpandedPlace] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
+  const [showNearby, setShowNearby] = useState(false);
 
   const [colorMode, setColorMode] = useState(() => {
     try {
@@ -317,7 +321,15 @@ export default function App() {
     setActiveCategory('All');
 
     const basePath = import.meta.env.BASE_URL || '/';
-    fetch(`${basePath}data/${config.dataFile}`)
+    const cacheBuster = `?v=${Date.now()}`;
+    fetch(`${basePath}data/${config.dataFile}${cacheBuster}`, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    })
       .then((r) => r.text())
       .then((csv) => {
         Papa.parse(csv, {
@@ -334,6 +346,7 @@ export default function App() {
               }))
               .filter((row) => Number.isFinite(row.lat) && Number.isFinite(row.lng));
 
+            console.log('Loaded places:', parsed.map(p => ({ name: p.name, category: p.category })));
             setPlaces(parsed);
             setLoading(false);
           },
@@ -387,16 +400,44 @@ export default function App() {
     );
   }, []);
 
+  // Calculate distance between two points (Haversine formula)
+  const getDistance = useCallback((lat1, lng1, lat2, lng2) => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }, []);
+
   // Filter places
   const filteredPlaces = useMemo(() => {
+    let filtered = places;
+
+    // Apply category and search filters
     const q = searchQuery.trim().toLowerCase();
-    return places.filter((p) => {
+    filtered = filtered.filter((p) => {
       const matchesCategory = activeCategory === 'All' || p.category === activeCategory;
       if (!q) return matchesCategory;
       const hay = `${p.name ?? ''} ${p.description ?? ''}`.toLowerCase();
       return matchesCategory && hay.includes(q);
     });
-  }, [places, activeCategory, searchQuery]);
+
+    // Apply nearby filter
+    if (showNearby && userLocation) {
+      filtered = filtered
+        .map((p) => ({
+          ...p,
+          distance: getDistance(userLocation.lat, userLocation.lng, p.lat, p.lng),
+        }))
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, 10);
+    }
+
+    return filtered;
+  }, [places, activeCategory, searchQuery, showNearby, userLocation, getDistance]);
 
   const categories = useMemo(() => {
     const cats = [...new Set(places.map((p) => p.category).filter(Boolean))];
@@ -405,6 +446,24 @@ export default function App() {
 
   const getCategoryColor = (category) => config.categories[category]?.color || '#94A3B8';
   const getCategoryIcon = (category) => config.categories[category]?.icon || MapPin;
+
+  const getCategoryEmoji = (category) => {
+    const emojiMap = {
+      // Singapore
+      Landmark: '🏛️',
+      Attraction: '✨',
+      Food: '🍜',
+      Adventure: '🎢',
+      Culture: '🎭',
+      // Malaysia
+      Shopping: '🛍️',
+      // Bali
+      Temple: '🛕',
+      Nature: '🌿',
+      Beach: '🏖️',
+    };
+    return emojiMap[category] || '📍';
+  };
 
   const handleSelectPlace = (place) => {
     setSelectedPlace((prev) => (prev?.id === place.id ? null : place));
@@ -441,131 +500,114 @@ export default function App() {
 
       {/* Header */}
       <header className="sticky top-0 z-[1000] mb-2 xs:mb-3 sm:mb-4">
-        <div className="mx-auto max-w-7xl px-2 xs:px-3 sm:px-4 pt-2 xs:pt-3 sm:pt-4">
+        <div className="mx-auto max-w-7xl px-2 xs:px-3 sm:px-4 pt-2 xs:pt-3 sm:pt-4 space-y-2">
+
+          {/* Row 1: Country Info + Theme Toggle */}
           <div className="glass-panel-strong rounded-2xl border t-border-strong shadow-2xl overflow-hidden relative">
-            {/* Background flag with low opacity - covers entire header */}
-            <div className="absolute inset-0 opacity-10 pointer-events-none">
-              <Flag code={config.flag} className="w-full h-full" preserveAspectRatio="none" />
-            </div>
+            <div
+              className="absolute inset-0 opacity-5 pointer-events-none bg-gradient-to-r"
+              style={{
+                background: `linear-gradient(135deg, ${theme.primary}20 0%, transparent 50%, ${theme.accent}15 100%)`
+              }}
+            />
 
-            <div className="relative px-2 xs:px-3 sm:px-4 py-2 xs:py-2.5 sm:py-3 flex items-center justify-between gap-2 xs:gap-3 overflow-x-auto scrollbar-hide">
-              <div className="flex items-center gap-2 xs:gap-3 min-w-0 flex-shrink-0">
-                <div className="min-w-0">
-                  <h1 className={`text-base xs:text-lg sm:text-xl font-extrabold bg-gradient-to-r ${theme.gradient} bg-clip-text text-transparent`}>
-                    {config.name}
-                  </h1>
-                  <p className="text-[10px] xs:text-xs t-muted2 truncate">{places.length} places</p>
+            <div className="relative px-3 xs:px-4 py-3 flex items-center justify-between gap-3">
+              {/* Left: Country Indicator with Flag */}
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex-shrink-0 rounded-xl overflow-hidden shadow-lg ring-2 ring-white/10">
+                  <Flag code={config.flag} className="w-12 h-8 xs:w-14 xs:h-9 sm:w-16 sm:h-11" />
                 </div>
-
-                {/* FX + Calculator (moved next to destination) */}
-                <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
-                  <div
-                    className="glass-panel rounded-xl border px-3 py-2 flex items-center gap-2"
-                    title={fx.asOf ? `As of ${fx.asOf}` : undefined}
-                  >
-                    <span className="text-xs font-extrabold t-muted2">FX</span>
-                    <span className="text-xs font-semibold t-muted">{fxLabel}</span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <Globe2 size={16} className="t-muted2 flex-shrink-0" />
+                    <h1 className={`text-lg xs:text-xl sm:text-2xl font-extrabold bg-gradient-to-r ${theme.gradient} bg-clip-text text-transparent`}>
+                      {config.name}
+                    </h1>
                   </div>
-
-                  <div className="glass-panel rounded-xl border px-3 py-2 flex items-center gap-2">
-                    <span className="text-xs font-extrabold t-muted2">{config.currency}</span>
-                    <input
-                      inputMode="decimal"
-                      value={localAmount}
-                      onChange={(e) => setLocalAmount(e.target.value)}
-                      placeholder="Amount"
-                      className="w-20 xs:w-24 sm:w-28 lg:w-[110px] rounded-lg border outline-none px-2 py-1 text-xs t-input"
-                      aria-label="Local currency amount"
-                    />
-                    <span className="text-xs t-muted3">≈</span>
-                    <span className="text-xs font-semibold t-muted tabular-nums">{gbpCalcLabel}</span>
+                  <div className="flex items-center gap-3 text-xs t-muted2 mt-0.5">
+                    <div className="flex items-center gap-1">
+                      <Clock size={12} className="flex-shrink-0" />
+                      <span className="font-semibold">{config.timezone}</span>
+                    </div>
+                    <span>•</span>
+                    <span>{places.length} places</span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {/* Theme toggle */}
-                <div className="glass-panel rounded-2xl border p-1 flex items-center gap-1" role="group" aria-label="Theme">
+              {/* Right: Theme Toggle */}
+              <div className="flex-shrink-0">
+                <div className="glass-panel rounded-xl border p-1 flex items-center gap-1" role="group" aria-label="Theme">
                   <button
                     onClick={() => setTheme('light')}
-                    className={`px-2 xs:px-3 py-2 rounded-xl flex items-center gap-1.5 xs:gap-2 transition-colors ${
-                      isLight ? 'bg-black/10' : 't-hover'
+                    className={`p-2.5 rounded-lg flex items-center justify-center transition-all ${
+                      isLight ? 'bg-black/10 scale-105' : 't-hover'
                     }`}
                     title="Light mode"
                     aria-label="Light mode"
                   >
-                    <Sun size={16} className="xs:hidden" />
-                    <Sun size={18} className="hidden xs:block" />
-                    <span className="text-xs xs:text-sm font-semibold hidden md:inline">Light</span>
+                    <Sun size={18} />
                   </button>
                   <button
                     onClick={() => setTheme('dark')}
-                    className={`px-2 xs:px-3 py-2 rounded-xl flex items-center gap-1.5 xs:gap-2 transition-colors ${
-                      !isLight ? 'bg-white/10' : 't-hover'
+                    className={`p-2.5 rounded-lg flex items-center justify-center transition-all ${
+                      !isLight ? 'bg-white/10 scale-105' : 't-hover'
                     }`}
                     title="Dusk mode"
                     aria-label="Dusk mode"
                   >
-                    <Moon size={16} className="xs:hidden" />
-                    <Moon size={18} className="hidden xs:block" />
-                    <span className="text-xs xs:text-sm font-semibold hidden md:inline">Dusk</span>
+                    <Moon size={18} />
                   </button>
                 </div>
-
-                {/* Destination switcher - show other 2 destinations */}
-                <div className="glass-panel rounded-2xl border p-1 flex items-center gap-1" role="group" aria-label="Destinations">
-                  {Object.entries(destinations)
-                    .filter(([key]) => key !== destination)
-                    .map(([key, dest]) => (
-                      <button
-                        key={key}
-                        onClick={() => setDestination(key)}
-                        className="px-2 xs:px-3 py-2 rounded-xl flex items-center gap-1.5 xs:gap-2 t-hover transition-colors min-h-[44px]"
-                        title={`Switch to ${dest.name}`}
-                        aria-label={`Switch to ${dest.name}`}
-                      >
-                        <Flag code={dest.flag} className="w-5 h-3 xs:w-6 xs:h-4 sm:w-7 sm:h-5 rounded shadow-sm ring-1 ring-black/10" />
-                        <span className="text-xs xs:text-sm font-semibold hidden lg:inline">{dest.name}</span>
-                      </button>
-                    ))}
-                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Mobile FX + Calculator - Outside header */}
-        <div className="lg:hidden mx-auto max-w-7xl px-2 xs:px-3 sm:px-4 mt-2">
-          <div className="glass-panel rounded-2xl border p-2 xs:p-3 shadow-lg">
-            <div className="grid grid-cols-2 gap-2">
-              <div
-                className="glass-panel rounded-xl border px-3 py-2 flex items-center justify-center gap-2"
-                title={fx.asOf ? `As of ${fx.asOf}` : undefined}
-              >
-                <span className="text-xs font-extrabold t-muted2">FX</span>
-                <span className="text-xs font-semibold t-muted">{fxLabel}</span>
-              </div>
+          {/* Row 2: Country Selector + FX Calculator */}
+          <div className="glass-panel-strong rounded-2xl border t-border-strong shadow-lg">
+            <div className="px-3 xs:px-4 py-3">
+              <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-3">
 
-              <div className="glass-panel rounded-xl border px-2 py-2 min-w-0">
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-1 min-w-0">
-                    <span className="text-xs font-extrabold t-muted2 flex-shrink-0">{config.currency}</span>
-                    <input
-                      inputMode="decimal"
-                      value={localAmount}
-                      onChange={(e) => setLocalAmount(e.target.value)}
-                      placeholder="Amount"
-                      className="flex-1 min-w-0 w-full rounded-lg border outline-none px-2 py-1 text-xs t-input min-h-[36px]"
-                      aria-label="Local currency amount"
-                    />
-                  </div>
-                  <div className="text-[10px] xs:text-xs t-muted2 text-center truncate">
-                    ≈ <span className="font-semibold tabular-nums">{gbpCalcLabel}</span>
+                {/* Country Selector */}
+                <div className="flex items-center justify-center sm:justify-start">
+                  <div className="glass-panel rounded-xl border p-1.5 flex items-center gap-1.5" role="group" aria-label="Destinations">
+                    {Object.entries(destinations)
+                      .filter(([key]) => key !== destination)
+                      .map(([key, dest]) => (
+                        <button
+                          key={key}
+                          onClick={() => setDestination(key)}
+                          className="px-3 py-2.5 rounded-lg t-hover transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
+                          title={`Switch to ${dest.name}`}
+                          aria-label={`Switch to ${dest.name}`}
+                        >
+                          <Flag code={dest.flag} className="w-8 h-5 rounded shadow-sm ring-1 ring-black/10" />
+                          <span className="text-sm font-bold hidden xs:inline">{dest.name}</span>
+                        </button>
+                      ))}
                   </div>
                 </div>
+
+                {/* FX Calculator with integrated rate display */}
+                <div className="glass-panel rounded-xl border px-3 py-2.5 flex items-center gap-2">
+                  <span className="text-xs font-extrabold t-muted2 flex-shrink-0">{config.currency}</span>
+                  <input
+                    inputMode="decimal"
+                    value={localAmount}
+                    onChange={(e) => setLocalAmount(e.target.value)}
+                    placeholder={`FX: ${fxLabel}`}
+                    className="flex-1 min-w-0 rounded-lg border outline-none px-2.5 py-1.5 text-sm t-input"
+                    aria-label="Local currency amount"
+                    title={fx.asOf ? `Exchange rate as of ${fx.asOf}` : undefined}
+                  />
+                  <span className="text-xs t-muted3 flex-shrink-0">≈</span>
+                  <span className="text-sm font-bold t-muted tabular-nums min-w-[60px] text-right">{gbpCalcLabel}</span>
+                </div>
+
               </div>
             </div>
           </div>
+
         </div>
 
       </header>
@@ -575,8 +617,9 @@ export default function App() {
         <div className="grid gap-4 lg:grid-cols-[420px_1fr] w-full overflow-hidden">
           {/* Sidebar */}
           <section className="order-2 lg:order-1 space-y-4 w-full min-w-0">
-            {/* Search */}
-            <div className="glass-panel rounded-2xl border p-3 shadow-2xl">
+            {/* Search & Filters */}
+            <div className="glass-panel rounded-2xl border p-4 shadow-2xl space-y-3">
+              {/* Search Bar */}
               <div className="relative">
                 <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 t-muted2" />
                 <input
@@ -584,14 +627,16 @@ export default function App() {
                   placeholder="Search places"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-xl border outline-none pl-11 pr-4 py-3 text-[15px] t-input"
+                  className="w-full rounded-xl border outline-none pl-11 pr-4 py-3 text-sm t-input"
                 />
               </div>
 
-              <div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              {/* Categories Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {categories.map((cat) => {
                   const isActive = activeCategory === cat;
                   const Icon = cat === 'All' ? MapPin : getCategoryIcon(cat);
+                  const emoji = cat === 'All' ? '📍' : getCategoryEmoji(cat);
                   const count = cat === 'All' ? places.length : places.filter((p) => p.category === cat).length;
                   const color = cat === 'All' ? theme.primary : getCategoryColor(cat);
 
@@ -599,14 +644,20 @@ export default function App() {
                     <button
                       key={cat}
                       onClick={() => setActiveCategory(cat)}
-                      className={`flex items-center gap-2 px-3 xs:px-4 py-2.5 rounded-full whitespace-nowrap transition-all flex-shrink-0 text-sm font-semibold ${
-                        isActive ? 'text-white shadow-2xl' : 't-chip'
+                      className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl transition-all text-xs font-bold ${
+                        isActive ? 'text-white shadow-lg scale-[1.02]' : 't-chip hover:scale-[1.02]'
                       }`}
                       style={isActive ? { backgroundColor: color } : undefined}
                     >
-                      <Icon size={16} />
-                      <span>{cat}</span>
-                      <span className={`text-xs ${isActive ? 'text-white/75' : 't-muted3'}`}>{count}</span>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-base flex-shrink-0">{emoji}</span>
+                        <span className="truncate">{cat}</span>
+                      </div>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-md flex-shrink-0 ${
+                        isActive ? 'bg-white/20' : 'bg-black/5 dark:bg-white/10'
+                      }`}>
+                        {count}
+                      </span>
                     </button>
                   );
                 })}
@@ -636,75 +687,84 @@ export default function App() {
                       transition={{ delay: index * 0.02 }}
                       className={`border-t t-border ${isSelected ? rowSelectedClass : ''}`}
                     >
+                      {/* Collapsed View - Redesigned */}
                       <div
-                        className={`px-4 py-3 flex items-center gap-3 cursor-pointer transition-colors ${rowHoverClass}`}
+                        className={`px-4 py-4 cursor-pointer transition-colors ${rowHoverClass}`}
                         onClick={() => handleSelectPlace(place)}
                       >
-                        <div
-                          className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
-                          style={{ backgroundColor: `${color}22` }}
-                        >
-                          <Icon size={20} style={{ color }} />
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-[15px] truncate">{place.name}</h3>
-                          <p className="text-[13px] t-muted2 truncate">{place.description}</p>
-                        </div>
-
-                        {/* Price */}
-                        {priceText ? (
-                          <div className={`text-sm font-extrabold tabular-nums ${isLight ? 'text-black/70' : 'text-white/85'}`}>
-                            {priceText}
+                        <div className="flex items-start gap-3">
+                          {/* Icon */}
+                          <div
+                            className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm"
+                            style={{ backgroundColor: `${color}18` }}
+                          >
+                            <Icon size={22} style={{ color }} />
                           </div>
-                        ) : null}
 
-                        <a
-                          href={place.googleMapsUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="p-2 rounded-xl t-chip transition-colors"
-                          title="Directions"
-                        >
-                          <Navigation size={16} />
-                        </a>
+                          {/* Content */}
+                          <div className="flex-1 min-w-0 pt-0.5">
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <h3 className="font-bold text-[15px] leading-tight">{place.name}</h3>
+                              {priceText && (
+                                <div className={`text-xs font-bold tabular-nums px-2 py-0.5 rounded-md ${isLight ? 'bg-black/5 text-black/70' : 'bg-white/10 text-white/85'} flex-shrink-0`}>
+                                  {priceText}
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-[13px] t-muted2 line-clamp-2 leading-relaxed">{place.description}</p>
+                          </div>
 
-                        <ChevronDown size={18} className={`t-muted2 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                          {/* Expand indicator */}
+                          <div className="flex-shrink-0 pt-1">
+                            <ChevronDown size={18} className={`t-muted3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                          </div>
+                        </div>
                       </div>
 
+                      {/* Expanded View - Modern Card Layout */}
                       <AnimatePresence>
                         {isExpanded && (
                           <motion.div
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: 'auto', opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
                             className="overflow-hidden"
                           >
                             <div className="px-4 pb-4">
-                              <div className="pl-[52px] space-y-3">
-                                <div className="flex items-start gap-2">
-                                  <Info size={14} className="t-muted3 mt-0.5 flex-shrink-0" />
-                                  <p className="text-sm t-muted">{place.notes}</p>
+                              <div className={`rounded-2xl p-4 ${isLight ? 'bg-black/[0.02]' : 'bg-white/[0.03]'} border t-border`}>
+                                {/* Notes Section */}
+                                <div className="mb-4">
+                                  <div className="flex items-start gap-2 mb-2">
+                                    <Info size={16} className="flex-shrink-0 mt-0.5" style={{ color }} />
+                                    <span className="text-xs font-bold uppercase tracking-wide t-muted3">Details</span>
+                                  </div>
+                                  <p className="text-sm t-muted leading-relaxed pl-6">{place.notes}</p>
                                 </div>
 
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="px-3 py-1 rounded-full text-xs font-semibold text-white" style={{ backgroundColor: color }}>
+                                {/* Category & Action Row */}
+                                <div className="flex items-center justify-between gap-3 pl-6">
+                                  {/* Category Badge */}
+                                  <span
+                                    className="px-3 py-1.5 rounded-full text-xs font-bold text-white shadow-sm"
+                                    style={{ backgroundColor: color }}
+                                  >
                                     {place.category}
                                   </span>
-                                </div>
 
-                                <a
-                                  href={place.googleMapsUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-extrabold text-white transition-opacity hover:opacity-90"
-                                  style={{ backgroundColor: theme.primary }}
-                                >
-                                  <Navigation size={16} />
-                                  Open in Google Maps
-                                  <ExternalLink size={14} />
-                                </a>
+                                  {/* Google Maps Icon Button */}
+                                  <a
+                                    href={place.googleMapsUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-sm hover:shadow-md"
+                                    style={{ backgroundColor: theme.primary }}
+                                    title="Open in Google Maps"
+                                  >
+                                    <Navigation size={18} className="text-white" />
+                                  </a>
+                                </div>
                               </div>
                             </div>
                           </motion.div>
@@ -769,7 +829,7 @@ export default function App() {
                     <NavigationControl position="bottom-right" showCompass showZoom />
 
                     {filteredPlaces.map((place) => {
-                      const color = getCategoryColor(place.category);
+                      const emoji = getCategoryEmoji(place.category);
                       const isSel = selectedPlace?.id === place.id;
 
                       return (
@@ -783,14 +843,17 @@ export default function App() {
                             handleSelectPlace(place);
                           }}
                         >
-                          <div className={`pin ${isSel ? 'pin--selected' : ''}`} style={{ backgroundColor: color }}>
-                            <div
-                              className="absolute inset-0 rounded-full"
-                              style={{
-                                background: `radial-gradient(circle at 30% 25%, rgba(255,255,255,0.55), rgba(255,255,255,0.0) 55%)`,
-                              }}
-                            />
-                            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pin-dot" />
+                          <div
+                            className={`cursor-pointer transition-all ${
+                              isSel ? 'scale-150' : 'scale-100 hover:scale-125'
+                            }`}
+                            style={{
+                              fontSize: '28px',
+                              filter: isSel ? 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
+                              textShadow: '0 0 3px white',
+                            }}
+                          >
+                            {emoji}
                           </div>
                         </Marker>
                       );
@@ -879,11 +942,37 @@ export default function App() {
               </div>
             </div>
 
-            {/* Helper */}
-            <div className="mt-4 text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-2 glass-panel rounded-full border text-xs t-muted2">
-                👆 Tap pins or list items • Switch destination in header
-              </div>
+            {/* Nearby Filter Button */}
+            <div className="mt-4">
+              <button
+                onClick={() => {
+                  if (!userLocation) {
+                    getUserLocation();
+                  }
+                  setShowNearby((prev) => !prev);
+                  if (!showNearby) {
+                    setActiveCategory('All');
+                    setSearchQuery('');
+                  }
+                }}
+                disabled={!userLocation && showNearby}
+                className={`w-full px-4 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
+                  showNearby
+                    ? 'glass-panel-strong border t-border-strong shadow-lg'
+                    : 'glass-panel border t-hover shadow-md hover:shadow-lg'
+                }`}
+                style={showNearby ? { backgroundColor: `${theme.primary}15`, borderColor: theme.primary } : undefined}
+              >
+                <LocateFixed size={18} style={showNearby ? { color: theme.primary } : undefined} />
+                <span style={showNearby ? { color: theme.primary } : undefined}>
+                  {showNearby ? '📍 Showing Nearest 10' : 'Find Nearby Places'}
+                </span>
+                {showNearby && (
+                  <span className="ml-auto px-2 py-0.5 rounded-md text-xs font-bold text-white" style={{ backgroundColor: theme.primary }}>
+                    {filteredPlaces.length}
+                  </span>
+                )}
+              </button>
             </div>
           </section>
         </div>
