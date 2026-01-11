@@ -3,8 +3,10 @@ import Map, { Marker, NavigationControl, Popup } from '@vis.gl/react-maplibre';
 import Papa from 'papaparse';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
+  Bookmark,
   Building,
   Camera,
+  Check,
   ChevronDown,
   Church,
   Clock,
@@ -20,11 +22,13 @@ import {
   Sparkles,
   Star,
   Sun,
+  Tag,
   Ticket,
   TreePine,
   Utensils,
   Waves,
   Moon,
+  X,
 } from 'lucide-react';
 
 const MAP_STYLES = {
@@ -202,6 +206,22 @@ function parseNumberLoose(s) {
   return Number.isFinite(n) ? n : null;
 }
 
+function formatNumberWithCommas(value) {
+  // Remove all non-digit and non-decimal characters
+  const cleaned = String(value).replace(/[^\d.]/g, '');
+
+  // Split into integer and decimal parts
+  const parts = cleaned.split('.');
+  const integerPart = parts[0];
+  const decimalPart = parts[1];
+
+  // Add commas to integer part
+  const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+  // Reconstruct with decimal if present
+  return decimalPart !== undefined ? `${formattedInteger}.${decimalPart}` : formattedInteger;
+}
+
 export default function App() {
   const [destination, setDestination] = useState('singapore');
   const [places, setPlaces] = useState([]);
@@ -220,6 +240,33 @@ export default function App() {
       if (saved === 'light' || saved === 'dark') return saved;
     } catch {}
     return 'light';
+  });
+
+  const [visitedPlaces, setVisitedPlaces] = useState(() => {
+    try {
+      const saved = localStorage.getItem('trip_visited_places');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const [tripPlaces, setTripPlaces] = useState(() => {
+    try {
+      const saved = localStorage.getItem('trip_selected_places');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const [placeTags, setPlaceTags] = useState(() => {
+    try {
+      const saved = localStorage.getItem('trip_place_tags');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
   });
 
   const [fx, setFx] = useState({ loading: true, rate: null, asOf: null });
@@ -246,6 +293,26 @@ export default function App() {
     } catch {}
   }, [colorMode]);
 
+  // Persist visited places to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('trip_visited_places', JSON.stringify(visitedPlaces));
+    } catch {}
+  }, [visitedPlaces]);
+
+  // Persist trip places to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('trip_selected_places', JSON.stringify(tripPlaces));
+    } catch {}
+  }, [tripPlaces]);
+
+  // Persist place tags to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('trip_place_tags', JSON.stringify(placeTags));
+    } catch {}
+  }, [placeTags]);
 
   // Reset calculator when destination changes
   useEffect(() => {
@@ -507,6 +574,76 @@ export default function App() {
     setExpandedPlace((prev) => (prev === place.id ? null : place.id));
   };
 
+  const toggleVisited = (placeId) => {
+    setVisitedPlaces((prev) => ({
+      ...prev,
+      [`${destination}_${placeId}`]: !prev[`${destination}_${placeId}`],
+    }));
+  };
+
+  const toggleTripPlace = (placeId) => {
+    setTripPlaces((prev) => ({
+      ...prev,
+      [`${destination}_${placeId}`]: !prev[`${destination}_${placeId}`],
+    }));
+  };
+
+  const selectedTripPlaces = useMemo(() => {
+    return places.filter(p => tripPlaces[`${destination}_${p.id}`]);
+  }, [places, tripPlaces, destination]);
+
+  const buildGoogleMapsRoute = useCallback(() => {
+    if (selectedTripPlaces.length < 1) return null;
+
+    // Use "My Location" as origin (current location)
+    const origin = 'My+Location';
+    const dest = `${selectedTripPlaces[selectedTripPlaces.length - 1].lat},${selectedTripPlaces[selectedTripPlaces.length - 1].lng}`;
+
+    // All selected places except the last one become waypoints
+    const waypoints = selectedTripPlaces
+      .slice(0, -1)
+      .map(p => `${p.lat},${p.lng}`)
+      .join('|');
+
+    let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}`;
+    if (waypoints) {
+      url += `&waypoints=${waypoints}`;
+    }
+
+    return url;
+  }, [selectedTripPlaces]);
+
+  const suggestedTags = [
+    'Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5',
+    'Morning', 'Afternoon', 'Evening',
+    'Breakfast', 'Lunch', 'Dinner',
+    'Must See', 'Optional', 'Backup Plan'
+  ];
+
+  const addTag = (placeId, tag) => {
+    const key = `${destination}_${placeId}`;
+    const trimmedTag = tag.trim();
+    if (!trimmedTag) return;
+
+    setPlaceTags((prev) => {
+      const existing = prev[key] || [];
+      // Case-insensitive duplicate check
+      if (existing.some(t => t.toLowerCase() === trimmedTag.toLowerCase())) return prev;
+      return {
+        ...prev,
+        [key]: [...existing, trimmedTag],
+      };
+    });
+  };
+
+  const removeTag = (placeId, tagToRemove) => {
+    const key = `${destination}_${placeId}`;
+    setPlaceTags((prev) => ({
+      ...prev,
+      [key]: (prev[key] || []).filter(t => t !== tagToRemove),
+    }));
+  };
+
   const neutralBackdrop = isLight
     ? 'radial-gradient(1200px 800px at 20% 10%, rgba(11,18,32,0.08), transparent 60%), radial-gradient(900px 700px at 80% 30%, rgba(11,18,32,0.06), transparent 55%), radial-gradient(800px 600px at 50% 90%, rgba(11,18,32,0.05), transparent 60%)'
     : 'radial-gradient(1200px 800px at 20% 10%, rgba(255,255,255,0.10), transparent 60%), radial-gradient(900px 700px at 80% 30%, rgba(255,255,255,0.07), transparent 55%), radial-gradient(800px 600px at 50% 90%, rgba(255,255,255,0.06), transparent 60%)';
@@ -632,7 +769,10 @@ export default function App() {
                   <input
                     inputMode="decimal"
                     value={localAmount}
-                    onChange={(e) => setLocalAmount(e.target.value)}
+                    onChange={(e) => {
+                      const formatted = formatNumberWithCommas(e.target.value);
+                      setLocalAmount(formatted);
+                    }}
                     placeholder={`FX: ${fxLabel}`}
                     className="flex-1 min-w-0 rounded-lg border outline-none px-2.5 py-1.5 text-sm t-input"
                     aria-label="Local currency amount"
@@ -670,7 +810,7 @@ export default function App() {
               </div>
 
               {/* Categories Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {categories.map((cat) => {
                   const isActive = activeCategory === cat;
                   const Icon = cat === 'All' ? MapPin : getCategoryIcon(cat);
@@ -682,25 +822,124 @@ export default function App() {
                     <button
                       key={cat}
                       onClick={() => setActiveCategory(cat)}
-                      className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl transition-all text-xs font-bold ${
+                      className={`flex flex-col gap-2 px-3 py-2.5 rounded-xl transition-all ${
                         isActive ? 'text-white shadow-lg scale-[1.02]' : 't-chip hover:scale-[1.02]'
                       }`}
                       style={isActive ? { backgroundColor: color } : undefined}
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-base flex-shrink-0">{emoji}</span>
-                        <span className="truncate">{cat}</span>
+                      <div className="flex items-center gap-2 justify-center">
+                        <span className="text-lg">{emoji}</span>
+                        <span className="text-sm font-bold whitespace-nowrap">{cat}</span>
                       </div>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-md flex-shrink-0 ${
-                        isActive ? 'bg-white/20' : 'bg-black/5 dark:bg-white/10'
+                      <div className={`text-xs font-extrabold tabular-nums text-center ${
+                        isActive ? 'opacity-90' : 't-muted2'
                       }`}>
-                        {count}
-                      </span>
+                        {count} {count === 1 ? 'place' : 'places'}
+                      </div>
                     </button>
                   );
                 })}
               </div>
             </div>
+
+            {/* Trip Planner Panel */}
+            {selectedTripPlaces.length > 0 && (
+              <div className="glass-panel rounded-2xl border shadow-2xl overflow-hidden">
+                <div className="px-4 py-3 flex items-center justify-between border-b t-border">
+                  <div className="flex items-center gap-2">
+                    <MapPin size={16} className="flex-shrink-0" style={{ color: theme.primary }} />
+                    <p className="text-sm font-extrabold tracking-tight">My Trip</p>
+                    <span className="text-xs t-muted2">({selectedTripPlaces.length})</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setTripPlaces((prev) => {
+                        const updated = { ...prev };
+                        places.forEach(p => delete updated[`${destination}_${p.id}`]);
+                        return updated;
+                      });
+                    }}
+                    className="text-xs font-bold t-muted2 t-hover px-2 py-1 rounded-lg"
+                  >
+                    Clear
+                  </button>
+                </div>
+
+                <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
+                  {selectedTripPlaces.map((place, index) => {
+                    const color = getCategoryColor(place.category);
+                    return (
+                      <div
+                        key={place.id}
+                        className="flex items-center gap-3 px-4 py-2.5 border-b t-border last:border-b-0"
+                      >
+                        <div
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-extrabold flex-shrink-0"
+                          style={{ backgroundColor: `${theme.primary}20`, color: theme.primary }}
+                        >
+                          {index + 1}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm leading-tight truncate">{place.name}</p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <p className="text-xs t-muted2 truncate">{place.category}</p>
+                            {placeTags[`${destination}_${place.id}`]?.length > 0 && (
+                              <>
+                                <span className="text-xs t-muted3">•</span>
+                                <div className="flex gap-1">
+                                  {placeTags[`${destination}_${place.id}`].slice(0, 2).map((tag) => (
+                                    <span
+                                      key={tag}
+                                      className="px-1.5 py-0.5 rounded text-[9px] font-bold"
+                                      style={{
+                                        backgroundColor: `${color}15`,
+                                        color: color,
+                                      }}
+                                    >
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => toggleTripPlace(place.id)}
+                          className="flex-shrink-0 w-7 h-7 rounded-lg t-hover flex items-center justify-center"
+                          title="Remove from trip"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="p-3 border-t t-border">
+                  {selectedTripPlaces.length >= 1 ? (
+                    <a
+                      href={buildGoogleMapsRoute()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm text-white transition-all shadow-md hover:shadow-lg hover:scale-[1.02] w-full"
+                      style={{ backgroundColor: theme.primary }}
+                    >
+                      <Navigation size={16} />
+                      Open Route in Google Maps
+                    </a>
+                  ) : (
+                    <div className="text-center py-2">
+                      <p className="text-xs t-muted2">
+                        Add at least 1 place to create route
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Places */}
             <div className="glass-panel rounded-2xl border shadow-2xl overflow-hidden">
@@ -733,10 +972,18 @@ export default function App() {
                         <div className="flex items-start gap-3">
                           {/* Icon */}
                           <div
-                            className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm"
+                            className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm relative"
                             style={{ backgroundColor: `${color}18` }}
                           >
                             <Icon size={22} style={{ color }} />
+                            {visitedPlaces[`${destination}_${place.id}`] && (
+                              <div
+                                className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center shadow-md"
+                                style={{ backgroundColor: theme.primary }}
+                              >
+                                <Check size={12} className="text-white" />
+                              </div>
+                            )}
                           </div>
 
                           {/* Content */}
@@ -750,7 +997,52 @@ export default function App() {
                               )}
                             </div>
                             <p className="text-[13px] t-muted2 line-clamp-2 leading-relaxed">{place.description}</p>
+
+                            {/* Tag badges */}
+                            {placeTags[`${destination}_${place.id}`]?.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1.5">
+                                {placeTags[`${destination}_${place.id}`].slice(0, 3).map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                                    style={{
+                                      backgroundColor: `${color}12`,
+                                      color: color,
+                                    }}
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                                {placeTags[`${destination}_${place.id}`].length > 3 && (
+                                  <span className="text-[10px] t-muted3 font-medium">
+                                    +{placeTags[`${destination}_${place.id}`].length - 3}
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
+
+                          {/* Trip Planning Checkbox */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleTripPlace(place.id);
+                            }}
+                            className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110"
+                            style={{
+                              backgroundColor: tripPlaces[`${destination}_${place.id}`] ? `${color}20` : 'transparent',
+                            }}
+                            title={tripPlaces[`${destination}_${place.id}`] ? 'Remove from trip' : 'Add to trip'}
+                          >
+                            <Bookmark
+                              size={18}
+                              className="transition-colors"
+                              style={{
+                                color: color,
+                                fill: tripPlaces[`${destination}_${place.id}`] ? color : 'transparent',
+                              }}
+                            />
+                          </button>
 
                           {/* Expand indicator */}
                           <div className="flex-shrink-0 pt-1">
@@ -790,17 +1082,99 @@ export default function App() {
                                     <p className="text-sm t-muted leading-relaxed">{place.notes}</p>
                                   </div>
 
+                                  {/* Custom Tags Section */}
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <Tag size={14} className="t-muted2" />
+                                      <p className="text-xs font-bold t-muted2 uppercase tracking-wider">Tags</p>
+                                    </div>
+
+                                    {placeTags[`${destination}_${place.id}`]?.length > 0 && (
+                                      <div className="flex flex-wrap gap-1.5">
+                                        {placeTags[`${destination}_${place.id}`].map((tag) => (
+                                          <button
+                                            key={tag}
+                                            onClick={() => removeTag(place.id, tag)}
+                                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold transition-all hover:scale-105"
+                                            style={{
+                                              backgroundColor: `${color}15`,
+                                              color: color,
+                                            }}
+                                            title="Click to remove"
+                                          >
+                                            {tag}
+                                            <X size={12} />
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
+
+                                    <div className="flex gap-2">
+                                      <input
+                                        type="text"
+                                        placeholder="Add tag (e.g., Day 1, Morning)..."
+                                        className="flex-1 px-3 py-2 rounded-lg border outline-none text-xs t-input"
+                                        onKeyPress={(e) => {
+                                          if (e.key === 'Enter' && e.target.value.trim()) {
+                                            addTag(place.id, e.target.value);
+                                            e.target.value = '';
+                                          }
+                                        }}
+                                      />
+                                    </div>
+
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {suggestedTags
+                                        .filter(tag => !placeTags[`${destination}_${place.id}`]?.includes(tag))
+                                        .slice(0, 6)
+                                        .map((tag) => (
+                                          <button
+                                            key={tag}
+                                            onClick={() => addTag(place.id, tag)}
+                                            className="px-2 py-1 rounded-lg text-xs font-medium transition-all hover:scale-105"
+                                            style={{
+                                              backgroundColor: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
+                                            }}
+                                            title="Click to add"
+                                          >
+                                            + {tag}
+                                          </button>
+                                        ))}
+                                    </div>
+                                  </div>
+
                                   {/* Rating & Action Row */}
-                                  <div className="flex items-center justify-between gap-3 pt-2">
+                                  <div className="flex items-center gap-2 pt-2 flex-wrap">
                                     {/* Rating */}
-                                    {place.rating ? (
-                                      <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl" style={{ backgroundColor: `${color}08` }}>
+                                    {place.rating && (
+                                      <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl" style={{ backgroundColor: `${color}08` }}>
                                         <Star size={16} className="fill-yellow-400 text-yellow-400 flex-shrink-0" />
                                         <span className="text-sm font-bold tabular-nums">{place.rating.toFixed(1)}</span>
                                       </div>
-                                    ) : (
-                                      <div className="px-4 py-2" />
                                     )}
+
+                                    {/* Visited Checkbox Button */}
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleVisited(place.id);
+                                      }}
+                                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-md hover:scale-105"
+                                      style={{
+                                        backgroundColor: visitedPlaces[`${destination}_${place.id}`] ? theme.primary : `${color}15`,
+                                        color: visitedPlaces[`${destination}_${place.id}`] ? 'white' : 'inherit',
+                                      }}
+                                      title={visitedPlaces[`${destination}_${place.id}`] ? 'Mark as not visited' : 'Mark as visited'}
+                                    >
+                                      {visitedPlaces[`${destination}_${place.id}`] ? (
+                                        <Check size={16} className="flex-shrink-0" />
+                                      ) : (
+                                        <div className="w-4 h-4 rounded-full border-2 flex-shrink-0" style={{ borderColor: color }} />
+                                      )}
+                                      <span className="hidden xs:inline">
+                                        {visitedPlaces[`${destination}_${place.id}`] ? 'Visited' : 'Visit'}
+                                      </span>
+                                    </button>
 
                                     {/* Google Maps Button */}
                                     <a
@@ -808,7 +1182,7 @@ export default function App() {
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       onClick={(e) => e.stopPropagation()}
-                                      className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm text-white transition-all shadow-sm hover:shadow-md hover:scale-105"
+                                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-sm text-white transition-all shadow-sm hover:shadow-md hover:scale-105 ml-auto"
                                       style={{ backgroundColor: theme.primary }}
                                       title="Open in Google Maps"
                                     >
@@ -884,6 +1258,7 @@ export default function App() {
                     {filteredPlaces.map((place) => {
                       const emoji = getCategoryEmoji(place.category);
                       const isSel = selectedPlace?.id === place.id;
+                      const isVisited = visitedPlaces[`${destination}_${place.id}`];
 
                       return (
                         <Marker
@@ -896,17 +1271,31 @@ export default function App() {
                             handleSelectPlace(place);
                           }}
                         >
-                          <div
-                            className={`cursor-pointer transition-all ${
-                              isSel ? 'scale-150' : 'scale-100 hover:scale-125'
-                            }`}
-                            style={{
-                              fontSize: '28px',
-                              filter: isSel ? 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
-                              textShadow: '0 0 3px white',
-                            }}
-                          >
-                            {emoji}
+                          <div className="relative">
+                            <div
+                              className={`cursor-pointer transition-all ${
+                                isSel ? 'scale-150' : 'scale-100 hover:scale-125'
+                              }`}
+                              style={{
+                                fontSize: '28px',
+                                filter: isSel ? 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
+                                textShadow: '0 0 3px white',
+                                opacity: isVisited ? 0.5 : 1,
+                              }}
+                            >
+                              {emoji}
+                            </div>
+                            {isVisited && (
+                              <div
+                                className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center shadow-lg pointer-events-none"
+                                style={{
+                                  backgroundColor: theme.primary,
+                                  border: '1.5px solid white',
+                                }}
+                              >
+                                <Check size={10} className="text-white" strokeWidth={3} />
+                              </div>
+                            )}
                           </div>
                         </Marker>
                       );
@@ -941,6 +1330,24 @@ export default function App() {
                                   <Star size={14} className="fill-yellow-400 text-yellow-400" />
                                   <span className="text-xs font-bold">{selectedPlace.rating.toFixed(1)}</span>
                                   <span className="text-[10px] t-muted2">Google Maps</span>
+                                </div>
+                              )}
+
+                              {/* Tags */}
+                              {placeTags[`${destination}_${selectedPlace.id}`]?.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {placeTags[`${destination}_${selectedPlace.id}`].map((tag) => (
+                                    <span
+                                      key={tag}
+                                      className="px-2 py-0.5 rounded-md text-[10px] font-bold"
+                                      style={{
+                                        backgroundColor: `${getCategoryColor(selectedPlace.category)}20`,
+                                        color: getCategoryColor(selectedPlace.category),
+                                      }}
+                                    >
+                                      {tag}
+                                    </span>
+                                  ))}
                                 </div>
                               )}
                             </div>
