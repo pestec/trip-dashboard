@@ -17,6 +17,7 @@ import {
   Mountain,
   Navigation,
   Palmtree,
+  Plane,
   Search,
   ShoppingBag,
   Sparkles,
@@ -163,6 +164,80 @@ const destinations = {
   },
 };
 
+// Hardcoded flights data (chronologically ordered)
+const FLIGHTS_DATA = [
+  {
+    id: 1,
+    date: '31 Mar',
+    route: 'LHR → SIN',
+    from: { code: 'LHR', country: 'GB', city: 'London' },
+    to: { code: 'SIN', country: 'SG', city: 'Singapore' },
+    airline: 'British Airways',
+    airlineColor: '#012169',
+    flightNumber: 'BA011',
+    cabin: 'Business',
+    departure: { time: '19:35', terminal: 'T5' },
+    arrival: { time: '16:05', terminal: 'T1', nextDay: true },
+    duration: '13h 30m',
+  },
+  {
+    id: 2,
+    date: '04 Apr',
+    route: 'SIN → KUL',
+    from: { code: 'SIN', country: 'SG', city: 'Singapore' },
+    to: { code: 'KUL', country: 'MY', city: 'Kuala Lumpur' },
+    airline: 'Malaysia Airlines',
+    airlineColor: '#012169',
+    flightNumber: 'MH608',
+    cabin: 'Economy',
+    departure: { time: '18:15', terminal: 'T2' },
+    arrival: { time: '19:25', terminal: 'T1' },
+    duration: '1h 10m',
+  },
+  {
+    id: 3,
+    date: '07 Apr',
+    route: 'KUL → DPS',
+    from: { code: 'KUL', country: 'MY', city: 'Kuala Lumpur' },
+    to: { code: 'DPS', country: 'ID', city: 'Bali' },
+    airline: 'AirAsia',
+    airlineColor: '#FF0000',
+    flightNumber: 'QZ551',
+    cabin: 'Economy',
+    departure: { time: '10:35', terminal: 'T2' },
+    arrival: { time: '13:40', terminal: 'T1' },
+    duration: '3h 5m',
+  },
+  {
+    id: 4,
+    date: '12 Apr',
+    route: 'DPS → SIN',
+    from: { code: 'DPS', country: 'ID', city: 'Bali' },
+    to: { code: 'SIN', country: 'SG', city: 'Singapore' },
+    airline: 'Jetstar',
+    airlineColor: '#FF6000',
+    flightNumber: 'JQ88',
+    cabin: 'Economy',
+    departure: { time: '15:05' },
+    arrival: { time: '18:00' },
+    duration: '2h 55m',
+  },
+  {
+    id: 5,
+    date: '12 Apr',
+    route: 'SIN → LHR',
+    from: { code: 'SIN', country: 'SG', city: 'Singapore' },
+    to: { code: 'LHR', country: 'GB', city: 'London' },
+    airline: 'British Airways',
+    airlineColor: '#012169',
+    flightNumber: 'BA012',
+    cabin: 'Economy',
+    departure: { time: '23:25', terminal: 'T1' },
+    arrival: { time: '06:30', terminal: 'T5', nextDay: true },
+    duration: '14h 5m',
+  },
+];
+
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
@@ -232,6 +307,7 @@ export default function App() {
   const [expandedPlace, setExpandedPlace] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [showNearby, setShowNearby] = useState(false);
+  const [showFlights, setShowFlights] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   const [colorMode, setColorMode] = useState(() => {
@@ -1409,6 +1485,154 @@ export default function App() {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Flights Section */}
+            <div className="mt-4">
+              <button
+                onClick={() => setShowFlights((prev) => !prev)}
+                className={`w-full px-4 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
+                  showFlights
+                    ? 'glass-panel-strong border t-border-strong shadow-lg'
+                    : 'glass-panel border t-hover shadow-md hover:shadow-lg'
+                }`}
+                style={showFlights ? { backgroundColor: `${theme.primary}15`, borderColor: theme.primary } : undefined}
+              >
+                <Plane size={18} style={showFlights ? { color: theme.primary } : undefined} />
+                <span style={showFlights ? { color: theme.primary } : undefined}>
+                  {showFlights ? 'Hide Flights' : 'My Flights'}
+                </span>
+                <span className="ml-auto px-2 py-0.5 rounded-md text-xs font-bold" style={{
+                  backgroundColor: showFlights ? theme.primary : 'rgba(0,0,0,0.1)',
+                  color: showFlights ? 'white' : 'inherit'
+                }}>
+                  {FLIGHTS_DATA.length}
+                </span>
+              </button>
+
+              {/* Flights Panel */}
+              <AnimatePresence>
+                {showFlights && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="space-y-2 mt-3">
+                      {FLIGHTS_DATA.map((flight, index) => (
+                        <div key={flight.id} className="glass-panel rounded-xl border shadow-lg overflow-hidden">
+                          {/* Flight Header with Date & Airline */}
+                          <div className="px-3 py-2 flex items-center justify-between" style={{
+                            backgroundColor: `${flight.airlineColor}08`,
+                            borderBottom: `1px solid ${flight.airlineColor}15`
+                          }}>
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg">✈️</span>
+                              <div>
+                                <p className="text-[10px] font-bold t-muted2">{flight.date}</p>
+                                <p className="text-[9px] t-muted3">{flight.airline}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              {index === 0 && (
+                                <span className="px-2 py-0.5 rounded-full text-[8px] font-bold" style={{
+                                  backgroundColor: `${theme.primary}25`,
+                                  color: theme.primary
+                                }}>
+                                  OUTBOUND
+                                </span>
+                              )}
+                              {index === FLIGHTS_DATA.length - 1 && (
+                                <span className="px-2 py-0.5 rounded-full text-[8px] font-bold" style={{
+                                  backgroundColor: `${theme.primary}25`,
+                                  color: theme.primary
+                                }}>
+                                  RETURN
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Flight Route & Times */}
+                          <div className="px-3 py-3">
+                            {/* Airport Codes & Flags */}
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="text-center">
+                                <div className="flex items-center gap-1.5 mb-1">
+                                  <img
+                                    src={`https://flagcdn.com/24x18/${flight.from.country.toLowerCase()}.png`}
+                                    srcSet={`https://flagcdn.com/48x36/${flight.from.country.toLowerCase()}.png 2x`}
+                                    alt={flight.from.country}
+                                    className="w-6 h-auto rounded-sm"
+                                  />
+                                  <span className="font-bold text-xl tracking-tight">{flight.from.code}</span>
+                                </div>
+                                <p className="text-[9px] t-muted2">{flight.from.city}</p>
+                              </div>
+
+                              <div className="flex-1 flex flex-col items-center mx-3">
+                                <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-current to-transparent t-muted3 mb-1"></div>
+                                <div className="flex items-center gap-1">
+                                  <Plane size={12} className="t-muted2" style={{ transform: 'rotate(90deg)' }} />
+                                  <span className="text-[9px] t-muted2 font-medium">{flight.duration}</span>
+                                </div>
+                              </div>
+
+                              <div className="text-center">
+                                <div className="flex items-center gap-1.5 mb-1">
+                                  <span className="font-bold text-xl tracking-tight">{flight.to.code}</span>
+                                  <img
+                                    src={`https://flagcdn.com/24x18/${flight.to.country.toLowerCase()}.png`}
+                                    srcSet={`https://flagcdn.com/48x36/${flight.to.country.toLowerCase()}.png 2x`}
+                                    alt={flight.to.country}
+                                    className="w-6 h-auto rounded-sm"
+                                  />
+                                </div>
+                                <p className="text-[9px] t-muted2">{flight.to.city}</p>
+                              </div>
+                            </div>
+
+                            {/* Departure & Arrival Times */}
+                            <div className="flex items-center justify-between text-xs">
+                              <div className="flex-1">
+                                <p className="font-extrabold text-base mb-0.5">{flight.departure.time}</p>
+                                {flight.departure.terminal && (
+                                  <p className="text-[9px] t-muted3">{flight.departure.terminal}</p>
+                                )}
+                              </div>
+
+                              <div className="flex-1 text-right">
+                                <p className="font-extrabold text-base mb-0.5">
+                                  {flight.arrival.time}
+                                  {flight.arrival.nextDay && (
+                                    <span className="text-[10px] font-bold ml-1" style={{ color: theme.primary }}>+1</span>
+                                  )}
+                                </p>
+                                {flight.arrival.terminal && (
+                                  <p className="text-[9px] t-muted3">{flight.arrival.terminal}</p>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Flight Number & Cabin */}
+                            <div className="mt-2.5 pt-2 border-t t-border flex items-center justify-between">
+                              <span className="text-[10px] font-bold t-muted2">{flight.flightNumber}</span>
+                              <span className="text-[9px] px-2 py-0.5 rounded-full" style={{
+                                backgroundColor: flight.cabin === 'Business' ? `${theme.primary}15` : 'rgba(0,0,0,0.05)',
+                                color: flight.cabin === 'Business' ? theme.primary : 'inherit'
+                              }}>
+                                {flight.cabin}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Nearby Filter Button */}
