@@ -439,11 +439,11 @@ export default function Budget() {
                   </th>
                   <th className="text-right py-3 px-4 font-bold">
                     <div>Scenario 2</div>
-                    <div className="text-xs font-normal text-slate-500">Extend Bali (3n extra) + Qatar via DOH</div>
+                    <div className="text-xs font-normal text-slate-500">Extend Bali (3n extra) - 2h20 Layover in DOH</div>
                   </th>
                   <th className="text-right py-3 px-4 font-bold">
                     <div>Scenario 3</div>
-                    <div className="text-xs font-normal text-slate-500">Extend Bali (1n extra) + Qatar via DOH</div>
+                    <div className="text-xs font-normal text-slate-500">Extend Bali (1n extra) + 2n in DOH</div>
                   </th>
                 </tr>
               </thead>
@@ -641,7 +641,7 @@ export default function Budget() {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold mb-1.5 flex items-center gap-2 text-sm">
-                    Extend Bali (3n) + Qatar via DOH
+                    Extend Bali (3n) + 2h20 Layover in DOH
                     {delta2.perPerson !== 0 && (
                       <span className={`flex items-center gap-1 text-sm ${delta2.perPerson > 0 ? 'text-red-600' : 'text-green-600'}`}>
                         {delta2.perPerson > 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
@@ -668,7 +668,7 @@ export default function Budget() {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold mb-1.5 flex items-center gap-2 text-sm">
-                    Extend Bali (1n) + Qatar via DOH
+                    Extend Bali (1n) + 2n in DOH
                     {delta3.perPerson !== 0 && (
                       <span className={`flex items-center gap-1 text-sm ${delta3.perPerson > 0 ? 'text-red-600' : 'text-green-600'}`}>
                         {delta3.perPerson > 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
