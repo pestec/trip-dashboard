@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Plane, Home, Calculator, RefreshCw, Info, TrendingUp, TrendingDown, Calendar } from 'lucide-react';
 import {
   DEFAULT_ASSUMPTIONS,
@@ -16,9 +16,28 @@ export default function Budget() {
   const [assumptions, setAssumptions] = useState(() => {
     try {
       const saved = localStorage.getItem('trip_budget_assumptions');
-      return saved ? JSON.parse(saved) : DEFAULT_ASSUMPTIONS;
-    } catch {
-      return DEFAULT_ASSUMPTIONS;
+
+      if (!saved) {
+        return { ...DEFAULT_ASSUMPTIONS };
+      }
+
+      const parsed = JSON.parse(saved);
+
+      // Validate that all required fields exist and have values
+      const isValid = parsed &&
+        parsed.flights && typeof parsed.flights.lhrToSin === 'number' &&
+        parsed.accommodation && typeof parsed.accommodation.singapore === 'number' &&
+        parsed.assumedNights && typeof parsed.assumedNights.singapore === 'number';
+
+      if (!isValid) {
+        localStorage.removeItem('trip_budget_assumptions');
+        return { ...DEFAULT_ASSUMPTIONS };
+      }
+
+      return parsed;
+    } catch (error) {
+      localStorage.removeItem('trip_budget_assumptions');
+      return { ...DEFAULT_ASSUMPTIONS };
     }
   });
 
@@ -81,7 +100,7 @@ export default function Budget() {
   };
 
   // Calendar helper to generate trip timeline
-  const generateCalendar = (scenario, scenarioNum) => {
+  const generateCalendar = useCallback((scenario, scenarioNum) => {
     const singaporeNights = assumptions.assumedNights.singapore;
     const kualaLumpurNights = assumptions.assumedNights.kualaLumpur;
 
@@ -96,7 +115,7 @@ export default function Budget() {
         duration: '13h 30m'
       },
       { date: '01 Apr', label: 'Arrive Singapore', type: 'arrival', color: 'blue' },
-      { date: '01-03 Apr', label: 'Singapore', nights: singaporeNights, type: 'stay', color: 'green' },
+      { date: '01-04 Apr', label: 'Singapore', nights: singaporeNights, type: 'stay', color: 'green' },
       {
         date: '04 Apr',
         label: 'SIN → KUL',
@@ -106,6 +125,7 @@ export default function Budget() {
         flightNumber: 'MH608',
         duration: '1h 10m'
       },
+      { date: '04 Apr', label: 'Arrive Malaysia', type: 'arrival', color: 'blue' },
       { date: '04-07 Apr', label: 'Kuala Lumpur', nights: kualaLumpurNights, type: 'stay', color: 'orange' },
       {
         date: '07 Apr',
@@ -116,6 +136,7 @@ export default function Budget() {
         flightNumber: 'QZ551',
         duration: '3h 5m'
       },
+      { date: '07 Apr', label: 'Arrive Indonesia', type: 'arrival', color: 'blue' },
     ];
 
     if (scenarioNum === 1) {
@@ -131,6 +152,7 @@ export default function Budget() {
           flightNumber: 'JQ88',
           duration: '2h 55m'
         },
+        { date: '12 Apr', label: 'Arrive Singapore', type: 'arrival', color: 'blue' },
         {
           date: '12 Apr',
           label: 'SIN → LHR',
@@ -140,7 +162,7 @@ export default function Budget() {
           flightNumber: 'BA012',
           duration: '14h 5m'
         },
-        { date: '13 Apr', label: 'Arrive London', type: 'arrival', color: 'red' }
+        { date: '13 Apr', label: 'Arrive United Kingdom', type: 'arrival', color: 'red' }
       );
     } else if (scenarioNum === 2) {
       // Scenario 2: Bali 7-15 Apr, flights on 15 Apr
@@ -155,6 +177,7 @@ export default function Budget() {
           flightNumber: 'JQ88',
           duration: '2h 55m'
         },
+        { date: '15 Apr', label: 'Arrive Singapore', type: 'arrival', color: 'blue' },
         {
           date: '15 Apr',
           label: 'SIN → DOH',
@@ -164,6 +187,7 @@ export default function Budget() {
           flightNumber: 'QR947',
           duration: '8h 0m'
         },
+        { date: '15 Apr', label: 'Arrive Qatar', type: 'arrival', color: 'cyan' },
         {
           date: '16 Apr',
           label: 'DOH → LGW',
@@ -173,12 +197,12 @@ export default function Budget() {
           flightNumber: 'QR009',
           duration: '7h 10m'
         },
-        { date: '16 Apr', label: 'Arrive London (Gatwick)', type: 'arrival', color: 'cyan' }
+        { date: '16 Apr', label: 'Arrive United Kingdom', type: 'arrival', color: 'cyan' }
       );
     } else if (scenarioNum === 3) {
       // Scenario 3: Bali 7-12 Apr, fly on 13 Apr, SIN on 13 Apr, DOH 13-15 Apr, fly to LHR on 16 Apr
       events.push(
-        { date: '07-12 Apr', label: 'Bali', nights: 6, type: 'stay', color: 'purple' },
+        { date: '07-13 Apr', label: 'Bali', nights: 6, type: 'stay', color: 'purple' },
         {
           date: '13 Apr',
           label: 'DPS → SIN',
@@ -188,9 +212,10 @@ export default function Budget() {
           flightNumber: 'JQ88',
           duration: '2h 55m'
         },
+        { date: '13 Apr', label: 'Arrive Singapore', type: 'arrival', color: 'blue' },
         { date: '13 Apr', label: 'Singapore', nights: 1, type: 'stay', color: 'green' },
         {
-          date: '13 Apr',
+          date: '14 Apr',
           label: 'SIN → DOH',
           type: 'flight',
           color: 'cyan',
@@ -198,7 +223,8 @@ export default function Budget() {
           flightNumber: 'QR943',
           duration: '7h 0m'
         },
-        { date: '13-15 Apr', label: 'Doha', nights: 3, type: 'stay', color: 'cyan' },
+        { date: '14 Apr', label: 'Arrive Qatar', type: 'arrival', color: 'cyan' },
+        { date: '14-15 Apr', label: 'Doha', nights: 2, type: 'stay', color: 'cyan' },
         {
           date: '16 Apr',
           label: 'DOH → LHR',
@@ -208,21 +234,16 @@ export default function Budget() {
           flightNumber: 'QR003',
           duration: '7h 25m'
         },
-        { date: '16 Apr', label: 'Arrive London (Heathrow)', type: 'arrival', color: 'cyan' }
+        { date: '16 Apr', label: 'Arrive United Kingdom', type: 'arrival', color: 'cyan' }
       );
     }
 
     return events;
-  };
+  }, [assumptions]);
 
-  const calendar1 = useMemo(() => generateCalendar(scenario1, 1), [scenario1]);
-  const calendar2 = useMemo(() => generateCalendar(scenario2, 2), [scenario2]);
-  const calendar3 = useMemo(() => generateCalendar(scenario3, 3), [scenario3]);
-
-  // Ensure data is ready before rendering
-  if (!scenario1 || !scenario2 || !scenario3) {
-    return null;
-  }
+  const calendar1 = useMemo(() => generateCalendar(scenario1, 1), [generateCalendar, scenario1]);
+  const calendar2 = useMemo(() => generateCalendar(scenario2, 2), [generateCalendar, scenario2]);
+  const calendar3 = useMemo(() => generateCalendar(scenario3, 3), [generateCalendar, scenario3]);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
