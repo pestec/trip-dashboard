@@ -13,10 +13,12 @@ const FLIGHT_COSTS = {
 
 const TOTAL_BUDGET_PP = 1100; // Total budget per person for flights + accommodation
 
+const SINGAPORE_ACCOMMODATION_COST = 356; // Hardcoded cost for 3 nights
+
 // Default budget values (editable by user)
 const DEFAULT_BUDGET = {
   accommodation: {
-    singapore: 300, // 3 nights initially
+    singapore: SINGAPORE_ACCOMMODATION_COST, // 3 nights (hardcoded)
     kualaLumpur: 200, // 3 nights
     bali: 840, // 7 nights (5 + 2 extra)
     singaporeExtra: 100, // 1 extra night
@@ -71,7 +73,14 @@ export default function Budget() {
   const [budget, setBudget] = useState(() => {
     try {
       const saved = localStorage.getItem('trip_budget');
-      return saved ? JSON.parse(saved) : DEFAULT_BUDGET;
+      const parsed = saved ? JSON.parse(saved) : DEFAULT_BUDGET;
+      return {
+        ...parsed,
+        accommodation: {
+          ...parsed.accommodation,
+          singapore: SINGAPORE_ACCOMMODATION_COST,
+        },
+      };
     } catch {
       return DEFAULT_BUDGET;
     }
@@ -151,6 +160,10 @@ export default function Budget() {
     setBudget((prev) => {
       const newBudget = JSON.parse(JSON.stringify(prev));
       const keys = path.split('.');
+      if (path === 'accommodation.singapore') {
+        newBudget.accommodation.singapore = SINGAPORE_ACCOMMODATION_COST;
+        return newBudget;
+      }
       let obj = newBudget;
       for (let i = 0; i < keys.length - 1; i++) {
         obj = obj[keys[i]];
@@ -375,7 +388,7 @@ export default function Budget() {
                   isAuthenticated ? budget.accommodation.singapore : maskedCurrency(budget.accommodation.singapore)
                 }
                 onChange={(e) => updateBudget('accommodation.singapore', e.target.value)}
-                disabled={!isAuthenticated}
+                disabled
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>

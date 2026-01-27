@@ -15,7 +15,14 @@ export default function Itinerary() {
       url: 'https://www.flightradar24.com/data/flights/ba11'
     },
     { date: '01 Apr', label: 'Arrive Singapore', type: 'arrival', color: 'blue' },
-    { date: '01-04 Apr', label: 'Singapore', nights: 3, type: 'stay', color: 'green' }, // TODO: Add accommodation URL
+    {
+      date: '01-04 Apr',
+      label: 'Singapore',
+      nights: 3,
+      type: 'stay',
+      color: 'green',
+      url: 'https://www.google.com/maps?sca_esv=445b43772c47b857&output=search&q=The+Robertson+House+by+The+Crest+Collection&source=lnms&fbs=ADc_l-aN0CWEZBOHjofHoaMMDiKpaEWjvZ2Py1XXV8d8KvlI3kj_s5Jds98_ubVRf0unUVsSxesyNaMSU8qNkqltIpMqt0EiWVIjJivfP-5dEs4ulfduhNoAL26h5jK8xRG_I-Q4z1JhlQwN4M1mHcjKBWb9D1qTmK9o1fMgUcJXsgNT5IZ1hT3zryGb79oMdahSGql9JjHJh45JFEARuburxh6cH4RXUQ&entry=mc&ved=1t:200715&ictx=111'
+    },
     {
       date: '04 Apr',
       label: 'SIN → KUL',
