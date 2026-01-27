@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Calculator, Map, Moon, Sun } from 'lucide-react';
+import { Calculator, Map, Moon, Sun, Calendar } from 'lucide-react';
 import Dashboard from './Dashboard';
 import Budget from './Budget';
+import Itinerary from './Itinerary';
 
 function Navigation() {
   const location = useLocation();
   const isDashboard = location.pathname === '/' || location.pathname === '';
   const isBudget = location.pathname === '/budget';
+  const isItinerary = location.pathname === '/itinerary';
 
   // Theme/color mode state
   const [colorMode, setColorMode] = useState(() => {
@@ -55,6 +57,17 @@ function Navigation() {
               <span>Dashboard</span>
             </Link>
             <Link
+              to="/itinerary"
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+                isItinerary
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Calendar size={18} />
+              <span>Itinerary</span>
+            </Link>
+            <Link
               to="/budget"
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all ${
                 isBudget
@@ -91,6 +104,7 @@ export default function AppRouter() {
       <Navigation />
       <Routes>
         <Route path="/" element={<Dashboard />} />
+        <Route path="/itinerary" element={<Itinerary />} />
         <Route path="/budget" element={<Budget />} />
       </Routes>
     </Router>
