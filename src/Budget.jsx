@@ -8,7 +8,7 @@ const FLIGHT_COSTS = {
   kulToDps: 46,
   dpsToSin: 70,
   sinToLhr: 254, // Combined QR947 (SIN→DOH) + QR5943 (DOH→LGW) with 2h35 connection
-  baCancellation: -35, // BA SIN→LHR cancellation refund
+  baCancellation: 35, // BA SIN→LHR cancellation fee
 };
 
 const TOTAL_BUDGET_PP = 1100; // Total budget per person for flights + accommodation
@@ -228,12 +228,12 @@ export default function Budget() {
               </div>
               <span className="font-bold text-slate-900 dark:text-slate-100">{formatCurrency(FLIGHT_COSTS.sinToLhr)}</span>
             </div>
-            <div className="flex justify-between items-center py-2 px-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-900/50">
+            <div className="flex justify-between items-center py-2 px-3 bg-slate-50 dark:bg-slate-900/30 rounded-lg border border-slate-200 dark:border-slate-700">
               <div className="flex flex-col">
-                <span className="text-sm text-green-700 dark:text-green-400">BA SIN → LHR Cancellation</span>
-                <span className="text-xs text-slate-500 dark:text-slate-400">Refund credit</span>
+                <span className="text-sm text-slate-900 dark:text-slate-100">BA SIN → LHR Cancellation</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">Cancellation fee</span>
               </div>
-              <span className="font-bold text-green-600 dark:text-green-400">{formatCurrency(FLIGHT_COSTS.baCancellation)}</span>
+              <span className="font-bold text-slate-900 dark:text-slate-100">{formatCurrency(FLIGHT_COSTS.baCancellation)}</span>
             </div>
             <div className="pt-3 mt-3 border-t border-slate-200 dark:border-slate-700">
               <div className="flex justify-between items-center">
