@@ -1,16 +1,20 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plane, Home, Calendar, RefreshCw, Utensils } from 'lucide-react';
+import { Plane, Home, RefreshCw, Utensils, Lock } from 'lucide-react';
 
-// Default budget values
+// Hardcoded flight costs (per person) - these cannot be changed
+const FLIGHT_COSTS = {
+  lhrToSin: 312,
+  sinToKul: 60,
+  kulToDps: 46,
+  dpsToSin: 70,
+  sinToLhr: 254, // Combined QR947 (SIN→DOH) + QR5943 (DOH→LGW) with 2h35 connection
+  baCancellation: -35, // BA SIN→LHR cancellation refund
+};
+
+const TOTAL_BUDGET_PP = 1100; // Total budget per person for flights + accommodation
+
+// Default budget values (editable by user)
 const DEFAULT_BUDGET = {
-  flights: {
-    lhrToSin: 312,
-    sinToKul: 60,
-    kulToDps: 46,
-    dpsToSin: 70,
-    sinToDoh: 125, // SIN → DOH (QR947)
-    dohToLgw: 125, // DOH → LGW (QR009)
-  },
   accommodation: {
     singapore: 300, // 3 nights initially
     kualaLumpur: 200, // 3 nights
@@ -26,7 +30,28 @@ const DEFAULT_BUDGET = {
 
 const formatCurrency = (amount) => `£${Math.round(amount)}`;
 
+const verifyAccess = (input) => {
+  const d = new Date();
+  const parts = [d.getDate(), d.getMonth() + 1, d.getFullYear()];
+  const transformed = parts.map(p => String(p).padStart(2, '0').split('').map(c => {
+    const n = parseInt(c);
+    return n === 9 ? '0' : String(n + 1);
+  }).join('')).join('');
+  return input === transformed;
+};
+
 export default function Budget() {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    try {
+      return sessionStorage.getItem('budget_auth') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [passwordInput, setPasswordInput] = useState('');
+  const [showError, setShowError] = useState(false);
+
   const [budget, setBudget] = useState(() => {
     try {
       const saved = localStorage.getItem('trip_budget');
@@ -35,6 +60,61 @@ export default function Budget() {
       return DEFAULT_BUDGET;
     }
   });
+
+  const handlePasswordSubmit = (e) => {
+    e.preventDefault();
+    if (verifyAccess(passwordInput)) {
+      setIsAuthenticated(true);
+      sessionStorage.setItem('budget_auth', 'true');
+      setShowError(false);
+    } else {
+      setShowError(true);
+      setPasswordInput('');
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center px-4">
+        <div className="w-full max-w-md">
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-8 shadow-lg">
+            <div className="flex justify-center mb-6">
+              <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <Lock size={32} className="text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold text-center mb-2 text-slate-900 dark:text-slate-100">
+              Budget Access
+            </h2>
+            <p className="text-sm text-center text-slate-500 dark:text-slate-400 mb-6">
+              Enter password to view budget details
+            </p>
+            <form onSubmit={handlePasswordSubmit}>
+              <input
+                type="password"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                placeholder="Enter password"
+                className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+                autoFocus
+              />
+              {showError && (
+                <p className="text-sm text-red-600 dark:text-red-400 mb-4">
+                  Incorrect password. Please try again.
+                </p>
+              )}
+              <button
+                type="submit"
+                className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors"
+              >
+                Access Budget
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Persist to localStorage
   useEffect(() => {
@@ -46,12 +126,12 @@ export default function Budget() {
   // Calculate totals
   const totals = useMemo(() => {
     const flightCostsPerPerson =
-      budget.flights.lhrToSin +
-      budget.flights.sinToKul +
-      budget.flights.kulToDps +
-      budget.flights.dpsToSin +
-      budget.flights.sinToDoh +
-      budget.flights.dohToLgw;
+      FLIGHT_COSTS.lhrToSin +
+      FLIGHT_COSTS.sinToKul +
+      FLIGHT_COSTS.kulToDps +
+      FLIGHT_COSTS.dpsToSin +
+      FLIGHT_COSTS.sinToLhr +
+      FLIGHT_COSTS.baCancellation;
 
     const flightCostsForCouple = flightCostsPerPerson * 2;
 
@@ -67,11 +147,24 @@ export default function Budget() {
     const totalPerPerson = flightCostsPerPerson + (accommodationTotal / 2) + dailyExpensesPerPerson;
     const totalForCouple = flightCostsForCouple + accommodationTotal + dailyExpensesForCouple;
 
+    // Calculate accommodation budget remaining from the £1100 pp constraint
+    const availableForAccommodation = TOTAL_BUDGET_PP - flightCostsPerPerson;
+    const accommodationBudgetPerPerson = availableForAccommodation;
+    const accommodationSpendPerPerson = accommodationTotal / 2;
+    const accommodationRemainingPerPerson = accommodationBudgetPerPerson - accommodationSpendPerPerson;
+    const accommodationPercentUsed = (accommodationSpendPerPerson / accommodationBudgetPerPerson) * 100;
+
     return {
       flights: { perPerson: flightCostsPerPerson, forCouple: flightCostsForCouple },
       accommodation: { perPerson: accommodationTotal / 2, forCouple: accommodationTotal },
       dailyExpenses: { perPerson: dailyExpensesPerPerson, forCouple: dailyExpensesForCouple },
       total: { perPerson: totalPerPerson, forCouple: totalForCouple },
+      accommodationBudget: {
+        available: accommodationBudgetPerPerson,
+        spent: accommodationSpendPerPerson,
+        remaining: accommodationRemainingPerPerson,
+        percentUsed: accommodationPercentUsed,
+      },
     };
   }, [budget]);
 
@@ -92,75 +185,6 @@ export default function Budget() {
     setBudget(DEFAULT_BUDGET);
   };
 
-  // Trip itinerary
-  const itinerary = [
-    {
-      date: '31 Mar',
-      label: 'LHR → SIN',
-      type: 'flight',
-      color: 'blue',
-      time: '19:35 - 16:05+1',
-      flightNumber: 'BA011',
-      duration: '13h 30m'
-    },
-    { date: '01 Apr', label: 'Arrive Singapore', type: 'arrival', color: 'blue' },
-    { date: '01-04 Apr', label: 'Singapore', nights: 3, type: 'stay', color: 'green' },
-    {
-      date: '04 Apr',
-      label: 'SIN → KUL',
-      type: 'flight',
-      color: 'blue',
-      time: '18:15 - 19:25',
-      flightNumber: 'MH608',
-      duration: '1h 10m'
-    },
-    { date: '04 Apr', label: 'Arrive Malaysia', type: 'arrival', color: 'blue' },
-    { date: '04-07 Apr', label: 'Kuala Lumpur', nights: 3, type: 'stay', color: 'orange' },
-    {
-      date: '07 Apr',
-      label: 'KUL → DPS',
-      type: 'flight',
-      color: 'blue',
-      time: '10:35 - 13:40',
-      flightNumber: 'QZ551',
-      duration: '3h 5m'
-    },
-    { date: '07 Apr', label: 'Arrive Indonesia', type: 'arrival', color: 'blue' },
-    { date: '07-14 Apr', label: 'Bali', nights: 7, type: 'stay', color: 'purple' },
-    {
-      date: '14 Apr',
-      label: 'DPS → SIN',
-      type: 'flight',
-      color: 'blue',
-      time: '15:05 - 18:00',
-      flightNumber: 'JQ88',
-      duration: '2h 55m'
-    },
-    { date: '14 Apr', label: 'Arrive Singapore', type: 'arrival', color: 'blue' },
-    { date: '14-15 Apr', label: 'Singapore', nights: 1, type: 'stay', color: 'green' },
-    {
-      date: '15 Apr',
-      label: 'SIN → DOH',
-      type: 'flight',
-      color: 'cyan',
-      time: '19:40 - 22:40',
-      flightNumber: 'QR947',
-      duration: '8h 0m'
-    },
-    { date: '15 Apr', label: 'Arrive Qatar', type: 'arrival', color: 'cyan' },
-    { date: '15 Apr', label: 'Doha Layover', type: 'layover', color: 'cyan', duration: '2h 25m' },
-    {
-      date: '16 Apr',
-      label: 'DOH → LGW',
-      type: 'flight',
-      color: 'cyan',
-      time: '01:30 - 06:40',
-      flightNumber: 'QR009',
-      duration: '7h 10m'
-    },
-    { date: '16 Apr', label: 'Arrive United Kingdom', type: 'arrival', color: 'cyan' }
-  ];
-
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <div className="mx-auto max-w-5xl px-4 py-6">
@@ -174,103 +198,119 @@ export default function Budget() {
           </p>
         </div>
 
-        {/* Trip Itinerary */}
+        {/* Flights - Hardcoded */}
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 mb-4">
           <h2 className="text-base font-bold mb-4 text-slate-700 dark:text-slate-300 flex items-center gap-2">
-            <Calendar size={18} />
-            Trip Itinerary
+            <Plane size={18} />
+            Flights (per person)
           </h2>
-          <div className="space-y-1.5">
-            {itinerary.map((event, idx) => {
-              if (event.type === 'flight') {
-                return (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-3 py-2 px-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50"
-                  >
-                    <Plane size={14} className="text-blue-600 dark:text-blue-400" />
-                    <div className="flex-1">
-                      <div className="font-semibold text-sm text-slate-900 dark:text-slate-100">
-                        {event.label}
-                      </div>
-                      <div className="text-xs text-slate-600 dark:text-slate-400">
-                        {event.flightNumber} · {event.time} · {event.duration}
-                      </div>
-                    </div>
-                    <div className="text-xs font-bold text-blue-600 dark:text-blue-400">
-                      {event.date}
-                    </div>
-                  </div>
-                );
-              }
-
-              if (event.type === 'stay') {
-                return (
-                  <div
-                    key={idx}
-                    className={`flex items-center gap-3 py-2 px-3 rounded-lg bg-${event.color}-50 dark:bg-${event.color}-950/30 border border-${event.color}-200 dark:border-${event.color}-900/50`}
-                  >
-                    <Home size={14} className={`text-${event.color}-600 dark:text-${event.color}-400`} />
-                    <div className="flex-1">
-                      <div className="font-semibold text-sm text-slate-900 dark:text-slate-100">
-                        {event.label}
-                      </div>
-                      <div className="text-xs text-slate-600 dark:text-slate-400">
-                        {event.nights} night{event.nights > 1 ? 's' : ''}
-                      </div>
-                    </div>
-                    <div className="text-xs font-bold text-slate-600 dark:text-slate-400">
-                      {event.date}
-                    </div>
-                  </div>
-                );
-              }
-
-              if (event.type === 'layover') {
-                return (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-3 py-2 px-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700"
-                  >
-                    <Calendar size={14} className="text-slate-500 dark:text-slate-400" />
-                    <div className="flex-1">
-                      <div className="font-semibold text-sm text-slate-900 dark:text-slate-100">
-                        {event.label}
-                      </div>
-                      <div className="text-xs text-slate-600 dark:text-slate-400">
-                        {event.duration}
-                      </div>
-                    </div>
-                    <div className="text-xs font-bold text-slate-600 dark:text-slate-400">
-                      {event.date}
-                    </div>
-                  </div>
-                );
-              }
-
-              if (event.type === 'arrival') {
-                return (
-                  <div
-                    key={idx}
-                    className="h-px bg-gradient-to-r from-transparent via-slate-300 dark:via-slate-600 to-transparent my-2 relative"
-                  >
-                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-50 dark:bg-slate-900 px-3 py-0.5 text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                      {event.label}
-                    </div>
-                  </div>
-                );
-              }
-
-              return null;
-            })}
+          <div className="space-y-3">
+            <div className="flex justify-between items-center py-2 px-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+              <span className="text-sm text-slate-700 dark:text-slate-300">LHR → SIN (BA011)</span>
+              <span className="font-bold text-slate-900 dark:text-slate-100">{formatCurrency(FLIGHT_COSTS.lhrToSin)}</span>
+            </div>
+            <div className="flex justify-between items-center py-2 px-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+              <span className="text-sm text-slate-700 dark:text-slate-300">SIN → KUL (MH608)</span>
+              <span className="font-bold text-slate-900 dark:text-slate-100">{formatCurrency(FLIGHT_COSTS.sinToKul)}</span>
+            </div>
+            <div className="flex justify-between items-center py-2 px-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+              <span className="text-sm text-slate-700 dark:text-slate-300">KUL → DPS (QZ551)</span>
+              <span className="font-bold text-slate-900 dark:text-slate-100">{formatCurrency(FLIGHT_COSTS.kulToDps)}</span>
+            </div>
+            <div className="flex justify-between items-center py-2 px-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+              <span className="text-sm text-slate-700 dark:text-slate-300">DPS → SIN (JQ 88)</span>
+              <span className="font-bold text-slate-900 dark:text-slate-100">{formatCurrency(FLIGHT_COSTS.dpsToSin)}</span>
+            </div>
+            <div className="flex justify-between items-center py-2 px-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+              <div className="flex flex-col">
+                <span className="text-sm text-slate-700 dark:text-slate-300">SIN → LHR (via DOH)</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">QR947 + QR5943 • 2h35 connection in Doha</span>
+              </div>
+              <span className="font-bold text-slate-900 dark:text-slate-100">{formatCurrency(FLIGHT_COSTS.sinToLhr)}</span>
+            </div>
+            <div className="flex justify-between items-center py-2 px-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-900/50">
+              <div className="flex flex-col">
+                <span className="text-sm text-green-700 dark:text-green-400">BA SIN → LHR Cancellation</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">Refund credit</span>
+              </div>
+              <span className="font-bold text-green-600 dark:text-green-400">{formatCurrency(FLIGHT_COSTS.baCancellation)}</span>
+            </div>
+            <div className="pt-3 mt-3 border-t border-slate-200 dark:border-slate-700">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Total Flights</span>
+                <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{formatCurrency(totals.flights.perPerson)}</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Budget Calculator */}
+        {/* Budget Constraint Indicator */}
+        <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 rounded-xl border border-purple-200 dark:border-purple-900/50 p-5 mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="text-base font-bold text-slate-700 dark:text-slate-300">
+                Flights + Accommodation Budget
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Budget constraint: {formatCurrency(TOTAL_BUDGET_PP)} per person
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                {formatCurrency(totals.accommodationBudget.remaining)}
+              </div>
+              <div className="text-xs text-slate-500 dark:text-slate-400">
+                {totals.accommodationBudget.remaining >= 0 ? 'remaining' : 'over budget'}
+              </div>
+            </div>
+          </div>
+
+          {/* Visual Progress Bar */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
+              <span>Flights: {formatCurrency(totals.flights.perPerson)}</span>
+              <span>Accommodation: {formatCurrency(totals.accommodationBudget.spent)} / {formatCurrency(totals.accommodationBudget.available)}</span>
+            </div>
+            <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+              <div className="h-full flex">
+                {/* Flights portion */}
+                <div
+                  className="bg-blue-500 dark:bg-blue-600"
+                  style={{ width: `${(totals.flights.perPerson / TOTAL_BUDGET_PP) * 100}%` }}
+                  title={`Flights: ${formatCurrency(totals.flights.perPerson)}`}
+                ></div>
+                {/* Accommodation portion */}
+                <div
+                  className={`${
+                    totals.accommodationBudget.percentUsed <= 100
+                      ? 'bg-green-500 dark:bg-green-600'
+                      : 'bg-red-500 dark:bg-red-600'
+                  }`}
+                  style={{
+                    width: `${Math.min(
+                      (totals.accommodationBudget.spent / TOTAL_BUDGET_PP) * 100,
+                      100 - (totals.flights.perPerson / TOTAL_BUDGET_PP) * 100
+                    )}%`,
+                  }}
+                  title={`Accommodation: ${formatCurrency(totals.accommodationBudget.spent)}`}
+                ></div>
+              </div>
+            </div>
+            {totals.accommodationBudget.percentUsed > 100 && (
+              <div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400 font-medium">
+                <span>⚠️</span>
+                <span>Accommodation exceeds available budget by {formatCurrency(Math.abs(totals.accommodationBudget.remaining))}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Accommodation - Editable */}
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 mb-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-slate-700 dark:text-slate-300">
-              Budget Calculator
+            <h2 className="text-base font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+              <Home size={18} />
+              Accommodation (for 2 people)
             </h2>
             <button
               onClick={handleReset}
@@ -281,178 +321,93 @@ export default function Budget() {
             </button>
           </div>
 
-          <div className="space-y-6">
-            {/* Flights */}
+          <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 uppercase tracking-wider flex items-center gap-2">
-                <Plane size={16} />
-                Flights (per person)
-              </h3>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
-                    LHR → SIN (BA011)
-                  </label>
-                  <input
-                    type="number"
-                    value={budget.flights.lhrToSin}
-                    onChange={(e) => updateBudget('flights.lhrToSin', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
-                    SIN → KUL (MH608)
-                  </label>
-                  <input
-                    type="number"
-                    value={budget.flights.sinToKul}
-                    onChange={(e) => updateBudget('flights.sinToKul', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
-                    KUL → DPS (QZ551)
-                  </label>
-                  <input
-                    type="number"
-                    value={budget.flights.kulToDps}
-                    onChange={(e) => updateBudget('flights.kulToDps', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
-                    DPS → SIN (JQ88)
-                  </label>
-                  <input
-                    type="number"
-                    value={budget.flights.dpsToSin}
-                    onChange={(e) => updateBudget('flights.dpsToSin', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
-                    SIN → DOH (QR947)
-                  </label>
-                  <input
-                    type="number"
-                    value={budget.flights.sinToDoh}
-                    onChange={(e) => updateBudget('flights.sinToDoh', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
-                    DOH → LGW (QR009)
-                  </label>
-                  <input
-                    type="number"
-                    value={budget.flights.dohToLgw}
-                    onChange={(e) => updateBudget('flights.dohToLgw', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
+              <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
+                Singapore (3 nights)
+              </label>
+              <input
+                type="number"
+                value={budget.accommodation.singapore}
+                onChange={(e) => updateBudget('accommodation.singapore', e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
-
-            {/* Accommodation */}
             <div>
-              <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 uppercase tracking-wider flex items-center gap-2">
-                <Home size={16} />
-                Accommodation (for 2 people)
-              </h3>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
-                    Singapore (3 nights)
-                  </label>
-                  <input
-                    type="number"
-                    value={budget.accommodation.singapore}
-                    onChange={(e) => updateBudget('accommodation.singapore', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
-                    Kuala Lumpur (3 nights)
-                  </label>
-                  <input
-                    type="number"
-                    value={budget.accommodation.kualaLumpur}
-                    onChange={(e) => updateBudget('accommodation.kualaLumpur', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
-                    Bali (7 nights)
-                  </label>
-                  <input
-                    type="number"
-                    value={budget.accommodation.bali}
-                    onChange={(e) => updateBudget('accommodation.bali', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
-                    Singapore Extra (1 night)
-                  </label>
-                  <input
-                    type="number"
-                    value={budget.accommodation.singaporeExtra}
-                    onChange={(e) => updateBudget('accommodation.singaporeExtra', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
+              <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
+                Kuala Lumpur (3 nights)
+              </label>
+              <input
+                type="number"
+                value={budget.accommodation.kualaLumpur}
+                onChange={(e) => updateBudget('accommodation.kualaLumpur', e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
-
-            {/* Daily Expenses */}
             <div>
-              <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 uppercase tracking-wider flex items-center gap-2">
-                <Utensils size={16} />
-                Daily Expenses (per person per day)
-              </h3>
-              <div className="grid md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
-                    Food
-                  </label>
-                  <input
-                    type="number"
-                    value={budget.dailyExpenses.food}
-                    onChange={(e) => updateBudget('dailyExpenses.food', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
-                    Activities
-                  </label>
-                  <input
-                    type="number"
-                    value={budget.dailyExpenses.activities}
-                    onChange={(e) => updateBudget('dailyExpenses.activities', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
-                    Total Days
-                  </label>
-                  <input
-                    type="number"
-                    value={budget.totalDays}
-                    onChange={(e) => updateBudget('totalDays', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
+              <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
+                Bali (7 nights)
+              </label>
+              <input
+                type="number"
+                value={budget.accommodation.bali}
+                onChange={(e) => updateBudget('accommodation.bali', e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
+                Singapore Extra (1 night)
+              </label>
+              <input
+                type="number"
+                value={budget.accommodation.singaporeExtra}
+                onChange={(e) => updateBudget('accommodation.singaporeExtra', e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Daily Expenses - Editable */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 mb-4">
+          <h2 className="text-base font-bold mb-4 text-slate-700 dark:text-slate-300 flex items-center gap-2">
+            <Utensils size={18} />
+            Daily Expenses (per person per day)
+          </h2>
+          <div className="grid md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
+                Food
+              </label>
+              <input
+                type="number"
+                value={budget.dailyExpenses.food}
+                onChange={(e) => updateBudget('dailyExpenses.food', e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
+                Activities
+              </label>
+              <input
+                type="number"
+                value={budget.dailyExpenses.activities}
+                onChange={(e) => updateBudget('dailyExpenses.activities', e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
+                Total Days
+              </label>
+              <input
+                type="number"
+                value={budget.totalDays}
+                onChange={(e) => updateBudget('totalDays', e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
           </div>
         </div>
