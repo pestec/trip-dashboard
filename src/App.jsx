@@ -298,7 +298,13 @@ function formatNumberWithCommas(value) {
 }
 
 export default function App() {
-  const [destination, setDestination] = useState('singapore');
+  const [destination, setDestination] = useState(() => {
+    try {
+      return localStorage.getItem('trip_destination') || 'singapore';
+    } catch {
+      return 'singapore';
+    }
+  });
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All');
@@ -389,6 +395,15 @@ export default function App() {
       localStorage.setItem('trip_place_tags', JSON.stringify(placeTags));
     } catch {}
   }, [placeTags]);
+
+  // Sync destination from localStorage
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const saved = localStorage.getItem('trip_destination');
+      if (saved && saved !== destination) setDestination(saved);
+    }, 100);
+    return () => clearInterval(interval);
+  }, [destination]);
 
   // Reset calculator when destination changes
   useEffect(() => {
@@ -752,7 +767,7 @@ export default function App() {
       <header className="sticky top-0 z-[1000] mb-2 xs:mb-3 sm:mb-4">
         <div className="mx-auto max-w-7xl px-2 xs:px-3 sm:px-4 pt-2 xs:pt-3 sm:pt-4 space-y-2">
 
-          {/* Row 1: Country Info + Theme Toggle */}
+          {/* Country Info */}
           <div className="glass-panel-strong rounded-2xl border t-border-strong shadow-2xl overflow-hidden relative">
             <div
               className="absolute inset-0 opacity-5 pointer-events-none bg-gradient-to-r"
@@ -761,103 +776,49 @@ export default function App() {
               }}
             />
 
-            <div className="relative px-3 xs:px-4 py-3 flex items-center justify-between gap-3">
-              {/* Left: Country Indicator with Flag */}
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="flex-shrink-0 rounded-xl overflow-hidden shadow-lg ring-2 ring-white/10">
-                  <Flag code={config.flag} className="w-12 h-8 xs:w-14 xs:h-9 sm:w-16 sm:h-11" />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <Globe2 size={16} className="t-muted2 flex-shrink-0" />
-                    <h1 className={`text-lg xs:text-xl sm:text-2xl font-extrabold bg-gradient-to-r ${theme.gradient} bg-clip-text text-transparent`}>
-                      {config.name}
-                    </h1>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs t-muted2 mt-0.5 flex-wrap">
-                    <div className="flex items-center gap-1.5">
-                      <Clock size={12} className="flex-shrink-0" />
-                      <span className="font-bold tabular-nums">{getLocalTime}</span>
-                      <span className="font-medium opacity-70">({getTimeDiff})</span>
-                    </div>
-                    <span className="hidden xs:inline">•</span>
-                    <span className="hidden xs:inline">{places.length} places</span>
-                  </div>
-                </div>
+            <div className="relative px-3 xs:px-4 py-3 flex items-center gap-3">
+              <div className="flex-shrink-0 rounded-xl overflow-hidden shadow-lg ring-2 ring-white/10">
+                <Flag code={config.flag} className="w-12 h-8 xs:w-14 xs:h-9 sm:w-16 sm:h-11" />
               </div>
-
-              {/* Right: Theme Toggle */}
-              <div className="flex-shrink-0">
-                <div className="glass-panel rounded-xl border p-1 flex items-center gap-1" role="group" aria-label="Theme">
-                  <button
-                    onClick={() => setTheme('light')}
-                    className={`p-2.5 rounded-lg flex items-center justify-center transition-all ${
-                      isLight ? 'bg-black/10 scale-105' : 't-hover'
-                    }`}
-                    title="Light mode"
-                    aria-label="Light mode"
-                  >
-                    <Sun size={18} />
-                  </button>
-                  <button
-                    onClick={() => setTheme('dark')}
-                    className={`p-2.5 rounded-lg flex items-center justify-center transition-all ${
-                      !isLight ? 'bg-white/10 scale-105' : 't-hover'
-                    }`}
-                    title="Dusk mode"
-                    aria-label="Dusk mode"
-                  >
-                    <Moon size={18} />
-                  </button>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <Globe2 size={16} className="t-muted2 flex-shrink-0" />
+                  <h1 className={`text-lg xs:text-xl sm:text-2xl font-extrabold bg-gradient-to-r ${theme.gradient} bg-clip-text text-transparent`}>
+                    {config.name}
+                  </h1>
+                </div>
+                <div className="flex items-center gap-2 text-xs t-muted2 mt-0.5 flex-wrap">
+                  <div className="flex items-center gap-1.5">
+                    <Clock size={12} className="flex-shrink-0" />
+                    <span className="font-bold tabular-nums">{getLocalTime}</span>
+                    <span className="font-medium opacity-70">({getTimeDiff})</span>
+                  </div>
+                  <span className="hidden xs:inline">•</span>
+                  <span className="hidden xs:inline">{places.length} places</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Row 2: Country Selector + FX Calculator */}
+          {/* FX Calculator */}
           <div className="glass-panel-strong rounded-2xl border t-border-strong shadow-lg">
             <div className="px-3 xs:px-4 py-3">
-              <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-3">
-
-                {/* Country Selector */}
-                <div className="flex items-center justify-center sm:justify-start">
-                  <div className="glass-panel rounded-xl border p-1.5 flex items-center gap-1.5" role="group" aria-label="Destinations">
-                    {Object.entries(destinations)
-                      .filter(([key]) => key !== destination)
-                      .map(([key, dest]) => (
-                        <button
-                          key={key}
-                          onClick={() => setDestination(key)}
-                          className="px-3 py-2.5 rounded-lg t-hover transition-all hover:scale-105 flex items-center gap-2 min-h-[44px]"
-                          title={`Switch to ${dest.name}`}
-                          aria-label={`Switch to ${dest.name}`}
-                        >
-                          <Flag code={dest.flag} className="w-8 h-5 rounded shadow-sm ring-1 ring-black/10" />
-                          <span className="text-sm font-bold hidden xs:inline">{dest.name}</span>
-                        </button>
-                      ))}
-                  </div>
-                </div>
-
-                {/* FX Calculator with integrated rate display */}
-                <div className="glass-panel rounded-xl border px-3 py-2.5 flex items-center gap-2">
-                  <span className="text-xs font-extrabold t-muted2 flex-shrink-0">{config.currency}</span>
-                  <input
-                    inputMode="decimal"
-                    value={localAmount}
-                    onChange={(e) => {
-                      const formatted = formatNumberWithCommas(e.target.value);
-                      setLocalAmount(formatted);
-                    }}
-                    placeholder={`FX: ${fxLabel}`}
-                    className="flex-1 min-w-0 rounded-lg border outline-none px-2.5 py-1.5 text-sm t-input"
-                    aria-label="Local currency amount"
-                    title={fx.asOf ? `Exchange rate as of ${fx.asOf}` : undefined}
-                  />
-                  <span className="text-xs t-muted3 flex-shrink-0">≈</span>
-                  <span className="text-sm font-bold t-muted tabular-nums min-w-[60px] text-right">{gbpCalcLabel}</span>
-                </div>
-
+              <div className="glass-panel rounded-xl border px-3 py-2.5 flex items-center gap-2">
+                <span className="text-xs font-extrabold t-muted2 flex-shrink-0">{config.currency}</span>
+                <input
+                  inputMode="decimal"
+                  value={localAmount}
+                  onChange={(e) => {
+                    const formatted = formatNumberWithCommas(e.target.value);
+                    setLocalAmount(formatted);
+                  }}
+                  placeholder={`FX: ${fxLabel}`}
+                  className="flex-1 min-w-0 rounded-lg border outline-none px-2.5 py-1.5 text-sm t-input"
+                  aria-label="Local currency amount"
+                  title={fx.asOf ? `Exchange rate as of ${fx.asOf}` : undefined}
+                />
+                <span className="text-xs t-muted3 flex-shrink-0">≈</span>
+                <span className="text-sm font-bold t-muted tabular-nums min-w-[60px] text-right">{gbpCalcLabel}</span>
               </div>
             </div>
           </div>

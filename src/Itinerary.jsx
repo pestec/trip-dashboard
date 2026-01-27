@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plane, Home, Calendar, MapPin, Clock, Coffee } from 'lucide-react';
+import { Plane, Home, Calendar, MapPin, Clock, Coffee, ExternalLink } from 'lucide-react';
 
 export default function Itinerary() {
   // Trip itinerary
@@ -10,11 +10,12 @@ export default function Itinerary() {
       type: 'flight',
       color: 'blue',
       time: '19:35 - 16:05+1',
-      flightNumber: 'BA011',
-      duration: '13h 30m'
+      flightNumber: 'BA11',
+      duration: '13h 30m',
+      url: 'https://www.flightradar24.com/data/flights/ba11'
     },
     { date: '01 Apr', label: 'Arrive Singapore', type: 'arrival', color: 'blue' },
-    { date: '01-04 Apr', label: 'Singapore', nights: 3, type: 'stay', color: 'green' },
+    { date: '01-04 Apr', label: 'Singapore', nights: 3, type: 'stay', color: 'green' }, // TODO: Add accommodation URL
     {
       date: '04 Apr',
       label: 'SIN → KUL',
@@ -22,10 +23,11 @@ export default function Itinerary() {
       color: 'blue',
       time: '18:15 - 19:25',
       flightNumber: 'MH608',
-      duration: '1h 10m'
+      duration: '1h 10m',
+      url: 'https://www.flightradar24.com/data/flights/mh608'
     },
     { date: '04 Apr', label: 'Arrive Malaysia', type: 'arrival', color: 'blue' },
-    { date: '04-07 Apr', label: 'Kuala Lumpur', nights: 3, type: 'stay', color: 'orange' },
+    { date: '04-07 Apr', label: 'Kuala Lumpur', nights: 3, type: 'stay', color: 'orange', url: 'https://www.airbnb.co.uk/rooms/769138868515631387?source_impression_id=p3_1769531463_P3EeT3AizjKzqJ1C' },
     {
       date: '07 Apr',
       label: 'KUL → DPS',
@@ -33,21 +35,23 @@ export default function Itinerary() {
       color: 'blue',
       time: '10:35 - 13:40',
       flightNumber: 'QZ551',
-      duration: '3h 5m'
+      duration: '3h 5m',
+      url: 'https://www.flightradar24.com/data/flights/qz551'
     },
     { date: '07 Apr', label: 'Arrive Indonesia', type: 'arrival', color: 'blue' },
-    { date: '07-14 Apr', label: 'Bali', nights: 7, type: 'stay', color: 'purple' },
+    { date: '07-14 Apr', label: 'Bali', nights: 7, type: 'stay', color: 'purple' }, // TODO: Add accommodation URL
     {
       date: '14 Apr',
       label: 'DPS → SIN',
       type: 'flight',
       color: 'blue',
       time: '15:05 - 18:00',
-      flightNumber: 'JQ 88',
-      duration: '2h 55m'
+      flightNumber: 'JQ88',
+      duration: '2h 55m',
+      url: 'https://www.flightradar24.com/data/flights/jq88'
     },
     { date: '14 Apr', label: 'Arrive Singapore', type: 'arrival', color: 'blue' },
-    { date: '14-15 Apr', label: 'Singapore', nights: 1, type: 'stay', color: 'green' },
+    { date: '14-15 Apr', label: 'Singapore', nights: 1, type: 'stay', color: 'green' }, // TODO: Add accommodation URL
     {
       date: '15 Apr',
       label: 'SIN → DOH',
@@ -55,7 +59,8 @@ export default function Itinerary() {
       color: 'cyan',
       time: '19:40 - 22:40',
       flightNumber: 'QR947',
-      duration: '8h 0m'
+      duration: '8h 0m',
+      url: 'https://www.flightradar24.com/data/flights/qr947'
     },
     { date: '15 Apr', label: 'Arrive Qatar', type: 'arrival', color: 'cyan' },
     { date: '15 Apr', label: 'Doha Layover', type: 'layover', color: 'cyan', duration: '2h 25m' },
@@ -65,8 +70,9 @@ export default function Itinerary() {
       type: 'flight',
       color: 'cyan',
       time: '01:30 - 06:40',
-      flightNumber: 'QR009',
-      duration: '7h 10m'
+      flightNumber: 'BA126',
+      duration: '7h 10m',
+      url: 'https://www.flightradar24.com/data/flights/ba126'
     },
     { date: '16 Apr', label: 'Arrive United Kingdom', type: 'arrival', color: 'cyan' }
   ];
@@ -96,13 +102,17 @@ export default function Itinerary() {
           <div className="space-y-6">
             {itinerary.map((event, idx) => {
               if (event.type === 'flight') {
+                const flightUrl = event.url;
+                const FlightCard = flightUrl ? 'a' : 'div';
+                const cardProps = flightUrl ? { href: flightUrl, target: '_blank', rel: 'noopener noreferrer' } : {};
+
                 return (
                   <div key={idx} className="relative pl-20">
                     {/* Timeline Dot */}
                     <div className="absolute left-[26px] top-6 w-4 h-4 rounded-full bg-blue-500 dark:bg-blue-400 border-4 border-white dark:border-slate-900 shadow-lg"></div>
 
                     {/* Flight Card */}
-                    <div className="group bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl border border-blue-200/50 dark:border-blue-900/50 shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 overflow-hidden">
+                    <FlightCard {...cardProps} className="group bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl border border-blue-200/50 dark:border-blue-900/50 shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 overflow-hidden block">
                       <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 dark:from-blue-500/20 dark:to-cyan-500/20 px-5 py-3 border-b border-blue-200/30 dark:border-blue-900/30">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -114,7 +124,7 @@ export default function Itinerary() {
                                 {event.label}
                               </div>
                               <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-                                Flight {event.flightNumber}
+                                {event.flightNumber}
                               </div>
                             </div>
                           </div>
@@ -132,12 +142,12 @@ export default function Itinerary() {
                             <span className="font-semibold">{event.time}</span>
                           </div>
                           <div className="flex-1 h-px bg-gradient-to-r from-blue-200 to-transparent dark:from-blue-800 dark:to-transparent"></div>
-                          <div className="text-sm font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full">
+                          <div className="text-sm font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full whitespace-nowrap">
                             {event.duration}
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </FlightCard>
                   </div>
                 );
               }
@@ -149,6 +159,9 @@ export default function Itinerary() {
                   purple: { bg: 'from-purple-500/10 to-fuchsia-500/10 dark:from-purple-500/20 dark:to-fuchsia-500/20', border: 'border-purple-200/50 dark:border-purple-900/50', dot: 'bg-purple-500 dark:bg-purple-400', icon: 'bg-purple-500 dark:bg-purple-600', text: 'text-purple-600 dark:text-purple-400' },
                 };
                 const colors = stayColors[event.color];
+                const stayUrl = event.url;
+                const StayCard = stayUrl ? 'a' : 'div';
+                const cardProps = stayUrl ? { href: stayUrl, target: '_blank', rel: 'noopener noreferrer' } : {};
 
                 return (
                   <div key={idx} className="relative pl-20">
@@ -156,7 +169,7 @@ export default function Itinerary() {
                     <div className={`absolute left-[26px] top-6 w-4 h-4 rounded-full ${colors.dot} border-4 border-white dark:border-slate-900 shadow-lg`}></div>
 
                     {/* Stay Card */}
-                    <div className={`group bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl border ${colors.border} shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 overflow-hidden`}>
+                    <StayCard {...cardProps} className={`group bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl border ${colors.border} shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 overflow-hidden block`}>
                       <div className={`bg-gradient-to-r ${colors.bg} px-5 py-3 border-b ${colors.border}`}>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -187,7 +200,7 @@ export default function Itinerary() {
                           </span>
                         </div>
                       </div>
-                    </div>
+                    </StayCard>
                   </div>
                 );
               }

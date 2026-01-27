@@ -30,13 +30,29 @@ const DEFAULT_BUDGET = {
 
 const formatCurrency = (amount) => `£${Math.round(amount)}`;
 
+// Small, deterministic demo value for locked state (keeps UI readable but hides real amounts)
+const maskedCurrency = (value) => {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '£1';
+  const demo = (Math.abs(Math.round(n)) % 9) + 1; // £1..£9
+  return `£${demo}`;
+};
+
 const verifyAccess = (input) => {
   const d = new Date();
   const parts = [d.getDate(), d.getMonth() + 1, d.getFullYear()];
-  const transformed = parts.map(p => String(p).padStart(2, '0').split('').map(c => {
-    const n = parseInt(c);
-    return n === 9 ? '0' : String(n + 1);
-  }).join('')).join('');
+  const transformed = parts
+    .map((p) =>
+      String(p)
+        .padStart(2, '0')
+        .split('')
+        .map((c) => {
+          const n = parseInt(c);
+          return n === 9 ? '0' : String(n + 1);
+        })
+        .join('')
+    )
+    .join('');
   return input === transformed;
 };
 
@@ -73,9 +89,9 @@ export default function Budget() {
     }
   };
 
-  // Helper to display value or placeholder
+  // Helper to display value or masked demo value
   const displayValue = (value) => {
-    return isAuthenticated ? formatCurrency(value) : '•••';
+    return isAuthenticated ? formatCurrency(value) : maskedCurrency(value);
   };
 
   // Persist to localStorage
@@ -103,10 +119,11 @@ export default function Budget() {
       budget.accommodation.bali +
       budget.accommodation.singaporeExtra;
 
-    const dailyExpensesPerPerson = (budget.dailyExpenses.food + budget.dailyExpenses.activities) * budget.totalDays;
+    const dailyExpensesPerPerson =
+      (budget.dailyExpenses.food + budget.dailyExpenses.activities) * budget.totalDays;
     const dailyExpensesForCouple = dailyExpensesPerPerson * 2;
 
-    const totalPerPerson = flightCostsPerPerson + (accommodationTotal / 2) + dailyExpensesPerPerson;
+    const totalPerPerson = flightCostsPerPerson + accommodationTotal / 2 + dailyExpensesPerPerson;
     const totalForCouple = flightCostsForCouple + accommodationTotal + dailyExpensesForCouple;
 
     // Calculate accommodation budget remaining from the £1100 pp constraint
@@ -167,24 +184,26 @@ export default function Budget() {
               <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
                 <Lock size={20} className="text-amber-600 dark:text-amber-400" />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">
-                  Budget values are hidden
+                  Real values are locked
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
-                  Enter password to view and edit monetary values
+                  Showing demo amounts (e.g., £1–£9). Unlock to view and edit real values.
                 </p>
-                <form onSubmit={handlePasswordSubmit} className="flex gap-2">
+                <form onSubmit={handlePasswordSubmit} className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="password"
+                    name="budget-password"
+                    autoComplete="current-password"
                     value={passwordInput}
                     onChange={(e) => setPasswordInput(e.target.value)}
                     placeholder="Enter password"
-                    className="flex-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full sm:flex-1 min-w-0 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   />
                   <button
                     type="submit"
-                    className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors text-sm"
+                    className="w-full sm:w-auto sm:shrink-0 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors text-sm whitespace-nowrap"
                   >
                     Unlock
                   </button>
@@ -208,38 +227,54 @@ export default function Budget() {
           <div className="space-y-3">
             <div className="flex justify-between items-center py-2 px-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
               <span className="text-sm text-slate-700 dark:text-slate-300">LHR → SIN (BA011)</span>
-              <span className="font-bold text-slate-900 dark:text-slate-100">{displayValue(FLIGHT_COSTS.lhrToSin)}</span>
+              <span className="font-bold text-slate-900 dark:text-slate-100">
+                {displayValue(FLIGHT_COSTS.lhrToSin)}
+              </span>
             </div>
             <div className="flex justify-between items-center py-2 px-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
               <span className="text-sm text-slate-700 dark:text-slate-300">SIN → KUL (MH608)</span>
-              <span className="font-bold text-slate-900 dark:text-slate-100">{displayValue(FLIGHT_COSTS.sinToKul)}</span>
+              <span className="font-bold text-slate-900 dark:text-slate-100">
+                {displayValue(FLIGHT_COSTS.sinToKul)}
+              </span>
             </div>
             <div className="flex justify-between items-center py-2 px-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
               <span className="text-sm text-slate-700 dark:text-slate-300">KUL → DPS (QZ551)</span>
-              <span className="font-bold text-slate-900 dark:text-slate-100">{displayValue(FLIGHT_COSTS.kulToDps)}</span>
+              <span className="font-bold text-slate-900 dark:text-slate-100">
+                {displayValue(FLIGHT_COSTS.kulToDps)}
+              </span>
             </div>
             <div className="flex justify-between items-center py-2 px-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
               <span className="text-sm text-slate-700 dark:text-slate-300">DPS → SIN (JQ 88)</span>
-              <span className="font-bold text-slate-900 dark:text-slate-100">{displayValue(FLIGHT_COSTS.dpsToSin)}</span>
+              <span className="font-bold text-slate-900 dark:text-slate-100">
+                {displayValue(FLIGHT_COSTS.dpsToSin)}
+              </span>
             </div>
             <div className="flex justify-between items-center py-2 px-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
               <div className="flex flex-col">
                 <span className="text-sm text-slate-700 dark:text-slate-300">SIN → LHR (via DOH)</span>
-                <span className="text-xs text-slate-500 dark:text-slate-400">QR947 + QR5943 • 2h35 connection in Doha</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  QR947 + QR5943 • 2h35 connection in Doha
+                </span>
               </div>
-              <span className="font-bold text-slate-900 dark:text-slate-100">{displayValue(FLIGHT_COSTS.sinToLhr)}</span>
+              <span className="font-bold text-slate-900 dark:text-slate-100">
+                {displayValue(FLIGHT_COSTS.sinToLhr)}
+              </span>
             </div>
             <div className="flex justify-between items-center py-2 px-3 bg-slate-50 dark:bg-slate-900/30 rounded-lg border border-slate-200 dark:border-slate-700">
               <div className="flex flex-col">
                 <span className="text-sm text-slate-900 dark:text-slate-100">BA SIN → LHR Cancellation</span>
                 <span className="text-xs text-slate-500 dark:text-slate-400">Cancellation fee</span>
               </div>
-              <span className="font-bold text-slate-900 dark:text-slate-100">{displayValue(FLIGHT_COSTS.baCancellation)}</span>
+              <span className="font-bold text-slate-900 dark:text-slate-100">
+                {displayValue(FLIGHT_COSTS.baCancellation)}
+              </span>
             </div>
             <div className="pt-3 mt-3 border-t border-slate-200 dark:border-slate-700">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Total Flights</span>
-                <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{displayValue(totals.flights.perPerson)}</span>
+                <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                  {displayValue(totals.flights.perPerson)}
+                </span>
               </div>
             </div>
           </div>
@@ -270,7 +305,10 @@ export default function Budget() {
           <div className="space-y-2">
             <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
               <span>Flights: {displayValue(totals.flights.perPerson)}</span>
-              <span>Accommodation: {displayValue(totals.accommodationBudget.spent)} / {displayValue(totals.accommodationBudget.available)}</span>
+              <span>
+                Accommodation: {displayValue(totals.accommodationBudget.spent)} /{' '}
+                {displayValue(totals.accommodationBudget.available)}
+              </span>
             </div>
             <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
               <div className="h-full flex">
@@ -300,7 +338,10 @@ export default function Budget() {
             {totals.accommodationBudget.percentUsed > 100 && (
               <div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400 font-medium">
                 <span>⚠️</span>
-                <span>Accommodation exceeds available budget by {displayValue(Math.abs(totals.accommodationBudget.remaining))}</span>
+                <span>
+                  Accommodation exceeds available budget by{' '}
+                  {displayValue(Math.abs(totals.accommodationBudget.remaining))}
+                </span>
               </div>
             )}
           </div>
@@ -329,8 +370,10 @@ export default function Budget() {
                 Singapore (3 nights)
               </label>
               <input
-                type={isAuthenticated ? "number" : "text"}
-                value={isAuthenticated ? budget.accommodation.singapore : "•••"}
+                type={isAuthenticated ? 'number' : 'text'}
+                value={
+                  isAuthenticated ? budget.accommodation.singapore : maskedCurrency(budget.accommodation.singapore)
+                }
                 onChange={(e) => updateBudget('accommodation.singapore', e.target.value)}
                 disabled={!isAuthenticated}
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -341,8 +384,12 @@ export default function Budget() {
                 Kuala Lumpur (3 nights)
               </label>
               <input
-                type={isAuthenticated ? "number" : "text"}
-                value={isAuthenticated ? budget.accommodation.kualaLumpur : "•••"}
+                type={isAuthenticated ? 'number' : 'text'}
+                value={
+                  isAuthenticated
+                    ? budget.accommodation.kualaLumpur
+                    : maskedCurrency(budget.accommodation.kualaLumpur)
+                }
                 onChange={(e) => updateBudget('accommodation.kualaLumpur', e.target.value)}
                 disabled={!isAuthenticated}
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -353,8 +400,8 @@ export default function Budget() {
                 Bali (7 nights)
               </label>
               <input
-                type={isAuthenticated ? "number" : "text"}
-                value={isAuthenticated ? budget.accommodation.bali : "•••"}
+                type={isAuthenticated ? 'number' : 'text'}
+                value={isAuthenticated ? budget.accommodation.bali : maskedCurrency(budget.accommodation.bali)}
                 onChange={(e) => updateBudget('accommodation.bali', e.target.value)}
                 disabled={!isAuthenticated}
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -365,8 +412,12 @@ export default function Budget() {
                 Singapore Extra (1 night)
               </label>
               <input
-                type={isAuthenticated ? "number" : "text"}
-                value={isAuthenticated ? budget.accommodation.singaporeExtra : "•••"}
+                type={isAuthenticated ? 'number' : 'text'}
+                value={
+                  isAuthenticated
+                    ? budget.accommodation.singaporeExtra
+                    : maskedCurrency(budget.accommodation.singaporeExtra)
+                }
                 onChange={(e) => updateBudget('accommodation.singaporeExtra', e.target.value)}
                 disabled={!isAuthenticated}
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -387,8 +438,8 @@ export default function Budget() {
                 Food
               </label>
               <input
-                type={isAuthenticated ? "number" : "text"}
-                value={isAuthenticated ? budget.dailyExpenses.food : "•••"}
+                type={isAuthenticated ? 'number' : 'text'}
+                value={isAuthenticated ? budget.dailyExpenses.food : maskedCurrency(budget.dailyExpenses.food)}
                 onChange={(e) => updateBudget('dailyExpenses.food', e.target.value)}
                 disabled={!isAuthenticated}
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -399,8 +450,10 @@ export default function Budget() {
                 Activities
               </label>
               <input
-                type={isAuthenticated ? "number" : "text"}
-                value={isAuthenticated ? budget.dailyExpenses.activities : "•••"}
+                type={isAuthenticated ? 'number' : 'text'}
+                value={
+                  isAuthenticated ? budget.dailyExpenses.activities : maskedCurrency(budget.dailyExpenses.activities)
+                }
                 onChange={(e) => updateBudget('dailyExpenses.activities', e.target.value)}
                 disabled={!isAuthenticated}
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -411,8 +464,8 @@ export default function Budget() {
                 Total Days
               </label>
               <input
-                type={isAuthenticated ? "number" : "text"}
-                value={isAuthenticated ? budget.totalDays : "•••"}
+                type={isAuthenticated ? 'number' : 'text'}
+                value={isAuthenticated ? budget.totalDays : '•••'}
                 onChange={(e) => updateBudget('totalDays', e.target.value)}
                 disabled={!isAuthenticated}
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -435,20 +488,28 @@ export default function Budget() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-600 dark:text-slate-400">Flights</span>
-                  <span className="font-bold text-slate-900 dark:text-slate-100">{displayValue(totals.flights.perPerson)}</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">
+                    {displayValue(totals.flights.perPerson)}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-600 dark:text-slate-400">Accommodation</span>
-                  <span className="font-bold text-slate-900 dark:text-slate-100">{displayValue(totals.accommodation.perPerson)}</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">
+                    {displayValue(totals.accommodation.perPerson)}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-600 dark:text-slate-400">Daily Expenses</span>
-                  <span className="font-bold text-slate-900 dark:text-slate-100">{displayValue(totals.dailyExpenses.perPerson)}</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">
+                    {displayValue(totals.dailyExpenses.perPerson)}
+                  </span>
                 </div>
                 <div className="h-px bg-slate-300 dark:bg-slate-600 my-2"></div>
                 <div className="flex justify-between text-lg">
                   <span className="font-bold text-slate-700 dark:text-slate-300">Total</span>
-                  <span className="font-bold text-blue-600 dark:text-blue-400">{displayValue(totals.total.perPerson)}</span>
+                  <span className="font-bold text-blue-600 dark:text-blue-400">
+                    {displayValue(totals.total.perPerson)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -461,25 +522,34 @@ export default function Budget() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-600 dark:text-slate-400">Flights</span>
-                  <span className="font-bold text-slate-900 dark:text-slate-100">{displayValue(totals.flights.forCouple)}</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">
+                    {displayValue(totals.flights.forCouple)}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-600 dark:text-slate-400">Accommodation</span>
-                  <span className="font-bold text-slate-900 dark:text-slate-100">{displayValue(totals.accommodation.forCouple)}</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">
+                    {displayValue(totals.accommodation.forCouple)}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-600 dark:text-slate-400">Daily Expenses</span>
-                  <span className="font-bold text-slate-900 dark:text-slate-100">{displayValue(totals.dailyExpenses.forCouple)}</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">
+                    {displayValue(totals.dailyExpenses.forCouple)}
+                  </span>
                 </div>
                 <div className="h-px bg-slate-300 dark:bg-slate-600 my-2"></div>
                 <div className="flex justify-between text-lg">
                   <span className="font-bold text-slate-700 dark:text-slate-300">Total</span>
-                  <span className="font-bold text-blue-600 dark:text-blue-400">{displayValue(totals.total.forCouple)}</span>
+                  <span className="font-bold text-blue-600 dark:text-blue-400">
+                    {displayValue(totals.total.forCouple)}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );

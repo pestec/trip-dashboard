@@ -23,6 +23,15 @@ function Navigation() {
 
   const isLight = colorMode === 'light';
 
+  // Destination state
+  const [destination, setDestination] = useState(() => {
+    try {
+      return localStorage.getItem('trip_destination') || 'singapore';
+    } catch {
+      return 'singapore';
+    }
+  });
+
   // Apply theme to document
   useEffect(() => {
     try {
@@ -35,9 +44,22 @@ function Navigation() {
     }
   }, [colorMode]);
 
+  // Persist destination
+  useEffect(() => {
+    try {
+      localStorage.setItem('trip_destination', destination);
+    } catch {}
+  }, [destination]);
+
   // Toggle theme
   const toggleTheme = () => {
     setColorMode(prev => prev === 'dark' ? 'light' : 'dark');
+  };
+
+  const destinations = {
+    singapore: { name: 'SG', flag: '🇸🇬' },
+    malaysia: { name: 'MY', flag: '🇲🇾' },
+    bali: { name: 'ID', flag: '🇮🇩' }
   };
 
   return (
@@ -54,7 +76,7 @@ function Navigation() {
               }`}
             >
               <Map size={16} className="sm:w-[18px] sm:h-[18px]" />
-              <span className="hidden sm:inline">Dashboard</span>
+              <span className="text-[10px] sm:text-sm">Dashboard</span>
             </Link>
             <Link
               to="/itinerary"
@@ -65,7 +87,7 @@ function Navigation() {
               }`}
             >
               <Calendar size={16} className="sm:w-[18px] sm:h-[18px]" />
-              <span className="hidden sm:inline">Itinerary</span>
+              <span className="text-[10px] sm:text-sm">Itinerary</span>
             </Link>
             <Link
               to="/budget"
@@ -76,22 +98,42 @@ function Navigation() {
               }`}
             >
               <Calculator size={16} className="sm:w-[18px] sm:h-[18px]" />
-              <span className="hidden sm:inline">Budget</span>
+              <span className="text-[10px] sm:text-sm">Budget</span>
             </Link>
           </div>
 
-          {/* Theme Toggle */}
-          <button
-            onClick={toggleTheme}
-            className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex-shrink-0"
-            title={isLight ? 'Switch to dark mode' : 'Switch to light mode'}
-          >
-            {isLight ? (
-              <Moon size={16} className="sm:w-[18px] sm:h-[18px] text-slate-700 dark:text-slate-300" />
-            ) : (
-              <Sun size={16} className="sm:w-[18px] sm:h-[18px] text-yellow-400" />
-            )}
-          </button>
+          {/* Right: Destinations + Theme */}
+          <div className="flex items-center gap-2">
+            {/* Destinations */}
+            <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-lg p-0.5">
+              {Object.entries(destinations)
+                .filter(([key]) => key !== destination)
+                .map(([key, dest]) => (
+                  <button
+                    key={key}
+                    onClick={() => setDestination(key)}
+                    className="px-2 py-1 rounded-md hover:bg-white/80 dark:hover:bg-slate-700 transition-all text-xs font-bold flex items-center gap-1"
+                    title={`Switch to ${key}`}
+                  >
+                    <span>{dest.flag}</span>
+                    <span className="hidden sm:inline">{dest.name}</span>
+                  </button>
+                ))}
+            </div>
+
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex-shrink-0"
+              title={isLight ? 'Switch to dark mode' : 'Switch to light mode'}
+            >
+              {isLight ? (
+                <Moon size={16} className="sm:w-[18px] sm:h-[18px] text-slate-700 dark:text-slate-300" />
+              ) : (
+                <Sun size={16} className="sm:w-[18px] sm:h-[18px] text-yellow-400" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </nav>
