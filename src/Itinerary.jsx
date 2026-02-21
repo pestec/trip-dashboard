@@ -46,7 +46,8 @@ export default function Itinerary() {
       url: 'https://www.flightradar24.com/data/flights/qz551'
     },
     { date: '07 Apr', label: 'Arrive Indonesia', type: 'arrival', color: 'blue' },
-    { date: '07-14 Apr', label: 'Bali', nights: 7, type: 'stay', color: 'purple' }, // TODO: Add accommodation URL
+    { date: '07-10 Apr', label: 'Bali - Ubud', nights: 3, type: 'stay', color: 'light-purple', url: 'https://www.google.com/maps/place/Kaamala+Resort+%26+Spa+Ubud+by+iNi+Vie+Hospitality/@-8.5162792,115.2533625,17z/data=!4m11!3m10!1s0x2dd23d9efd543713:0xf8adf658c4f0fc16!5m4!1s2026-04-07!2i3!4m1!1i2!8m2!3d-8.5162845!4d115.2559374!16s%2Fg%2F11fq8xyt9h?entry=ttu&g_ep=EgoyMDI2MDIxOC4wIKXMDSoASAFQAw%3D%3D' },
+    { date: '10-14 Apr', label: 'Bali - Uluwatu', nights: 4, type: 'stay', color: 'dark-purple', url: 'https://www.google.com/maps/place/Alila+Villas+Uluwatu/@-8.829,115.088,17z/data=!3m1!4b1!4m5!3m4!1s0x2dd23d9efd543713:0xf8adf658c4f0fc16!8m2!3d-8.829!4d115.088' },
     {
       date: '14 Apr',
       label: 'DPS → SIN',
@@ -164,6 +165,8 @@ export default function Itinerary() {
                   green: { bg: 'from-emerald-500/10 to-green-500/10 dark:from-emerald-500/20 dark:to-green-500/20', border: 'border-emerald-200/50 dark:border-emerald-900/50', dot: 'bg-emerald-500 dark:bg-emerald-400', icon: 'bg-emerald-500 dark:bg-emerald-600', text: 'text-emerald-600 dark:text-emerald-400' },
                   orange: { bg: 'from-orange-500/10 to-amber-500/10 dark:from-orange-500/20 dark:to-amber-500/20', border: 'border-orange-200/50 dark:border-orange-900/50', dot: 'bg-orange-500 dark:bg-orange-400', icon: 'bg-orange-500 dark:bg-orange-600', text: 'text-orange-600 dark:text-orange-400' },
                   purple: { bg: 'from-purple-500/10 to-fuchsia-500/10 dark:from-purple-500/20 dark:to-fuchsia-500/20', border: 'border-purple-200/50 dark:border-purple-900/50', dot: 'bg-purple-500 dark:bg-purple-400', icon: 'bg-purple-500 dark:bg-purple-600', text: 'text-purple-600 dark:text-purple-400' },
+                  'light-purple': { bg: 'from-violet-400/10 to-purple-400/10 dark:from-violet-400/20 dark:to-purple-400/20', border: 'border-violet-200/50 dark:border-violet-800/50', dot: 'bg-violet-400 dark:bg-violet-300', icon: 'bg-violet-400 dark:bg-violet-500', text: 'text-violet-500 dark:text-violet-300' },
+                  'dark-purple': { bg: 'from-indigo-600/10 to-purple-700/10 dark:from-indigo-600/20 dark:to-purple-700/20', border: 'border-indigo-300/50 dark:border-indigo-700/50', dot: 'bg-indigo-600 dark:bg-indigo-400', icon: 'bg-indigo-600 dark:bg-indigo-700', text: 'text-indigo-600 dark:text-indigo-400' },
                 };
                 const colors = stayColors[event.color];
                 const stayUrl = event.url;

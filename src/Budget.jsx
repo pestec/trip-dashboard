@@ -11,16 +11,19 @@ const FLIGHT_COSTS = {
   baCancellation: 35, // BA SIN→LHR cancellation fee
 };
 
-const TOTAL_BUDGET_PP = 1100; // Total budget per person for flights + accommodation
+const TOTAL_BUDGET_PP = 1500; // Total budget per person for flights + accommodation
 
 const SINGAPORE_ACCOMMODATION_COST = 356; // Hardcoded cost for 3 nights
+const KUALA_LUMPUR_ACCOMMODATION_COST = 169; // Hardcoded cost for 3 nights
+const UBUD_ACCOMMODATION_COST = 470; // Hardcoded cost for Ubud portion
 
 // Default budget values (editable by user)
 const DEFAULT_BUDGET = {
   accommodation: {
     singapore: SINGAPORE_ACCOMMODATION_COST, // 3 nights (hardcoded)
-    kualaLumpur: 200, // 3 nights
-    bali: 840, // 7 nights (5 + 2 extra)
+    kualaLumpur: KUALA_LUMPUR_ACCOMMODATION_COST, // 3 nights (hardcoded)
+    ubudBali: UBUD_ACCOMMODATION_COST, // Ubud portion (hardcoded)
+    uluwatuBali: 370, // Uluwatu portion (editable)
     singaporeExtra: 100, // 1 extra night
   },
   dailyExpenses: {
@@ -79,6 +82,9 @@ export default function Budget() {
         accommodation: {
           ...parsed.accommodation,
           singapore: SINGAPORE_ACCOMMODATION_COST,
+          kualaLumpur: KUALA_LUMPUR_ACCOMMODATION_COST,
+          ubudBali: UBUD_ACCOMMODATION_COST,
+          uluwatuBali: parsed.accommodation.uluwatuBali ?? parsed.accommodation.bali ?? 370,
         },
       };
     } catch {
@@ -125,7 +131,8 @@ export default function Budget() {
     const accommodationTotal =
       budget.accommodation.singapore +
       budget.accommodation.kualaLumpur +
-      budget.accommodation.bali +
+      budget.accommodation.ubudBali +
+      budget.accommodation.uluwatuBali +
       budget.accommodation.singaporeExtra;
 
     const dailyExpensesPerPerson =
@@ -162,6 +169,14 @@ export default function Budget() {
       const keys = path.split('.');
       if (path === 'accommodation.singapore') {
         newBudget.accommodation.singapore = SINGAPORE_ACCOMMODATION_COST;
+        return newBudget;
+      }
+      if (path === 'accommodation.kualaLumpur') {
+        newBudget.accommodation.kualaLumpur = KUALA_LUMPUR_ACCOMMODATION_COST;
+        return newBudget;
+      }
+      if (path === 'accommodation.ubudBali') {
+        newBudget.accommodation.ubudBali = UBUD_ACCOMMODATION_COST;
         return newBudget;
       }
       let obj = newBudget;
@@ -404,18 +419,30 @@ export default function Budget() {
                     : maskedCurrency(budget.accommodation.kualaLumpur)
                 }
                 onChange={(e) => updateBudget('accommodation.kualaLumpur', e.target.value)}
-                disabled={!isAuthenticated}
+                disabled
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
-                Bali (7 nights)
+                Bali – Ubud
               </label>
               <input
                 type={isAuthenticated ? 'number' : 'text'}
-                value={isAuthenticated ? budget.accommodation.bali : maskedCurrency(budget.accommodation.bali)}
-                onChange={(e) => updateBudget('accommodation.bali', e.target.value)}
+                value={isAuthenticated ? budget.accommodation.ubudBali : maskedCurrency(budget.accommodation.ubudBali)}
+                onChange={(e) => updateBudget('accommodation.ubudBali', e.target.value)}
+                disabled
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
+                Bali – Uluwatu
+              </label>
+              <input
+                type={isAuthenticated ? 'number' : 'text'}
+                value={isAuthenticated ? budget.accommodation.uluwatuBali : maskedCurrency(budget.accommodation.uluwatuBali)}
+                onChange={(e) => updateBudget('accommodation.uluwatuBali', e.target.value)}
                 disabled={!isAuthenticated}
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               />
