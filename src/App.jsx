@@ -3,6 +3,7 @@ import Map, { Marker, NavigationControl, Popup } from '@vis.gl/react-maplibre';
 import Papa from 'papaparse';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
+  BedDouble,
   Bookmark,
   Building,
   Camera,
@@ -110,11 +111,30 @@ const destinations = {
       gradient: 'from-red-500 to-rose-300',
     },
     categories: {
-      Landmark: { icon: Camera, color: '#60A5FA' },
-      Attraction: { icon: Sparkles, color: '#C084FC' },
+      Sights: { icon: Camera, color: '#60A5FA' },
       Food: { icon: Utensils, color: '#FB7185' },
-      Adventure: { icon: Ticket, color: '#F59E0B' },
-      Culture: { icon: Church, color: '#A78BFA' },
+      Drinks: { icon: Sun, color: '#FCD34D' },
+      Wellness: { icon: Sparkles, color: '#E879F9' },
+      Nature: { icon: TreePine, color: '#34D399' },
+      Stay: { icon: BedDouble, color: '#F97316' },
+    },
+    // Maps old CSV categories → display categories
+    categoryMap: {
+      Landmark: 'Sights',
+      Attraction: 'Sights',
+      Culture: 'Sights',
+      Neighborhood: 'Sights',
+      Shopping: 'Sights',
+      Bridge: 'Sights',
+      Airport: 'Sights',
+      'Hawker Centre': 'Food',
+      Restaurant: 'Food',
+      Desserts: 'Food',
+      Coffee: 'Drinks',
+      Spa: 'Wellness',
+      Garden: 'Nature',
+      Hotel: 'Stay',
+      Accommodation: 'Stay',
     },
   },
   malaysia: {
@@ -181,9 +201,11 @@ function rgbaFromHex(hex, alpha) {
 }
 
 function normalizePrice(place) {
-  const p = String(place?.price ?? '').trim();
-  if (p) return p;
-  if (Number(place?.priceRange) === 0) return 'Free';
+  const r = Number(place?.priceRange);
+  if (r === 0) return 'Free';
+  if (r === 1) return '$';
+  if (r === 2) return '$$';
+  if (r >= 3) return '$$$';
   return '';
 }
 
@@ -532,13 +554,15 @@ export default function App() {
   }, []);
 
   // Filter places
+  const resolveCategory = (raw) => config.categoryMap?.[raw] || raw;
+
   const filteredPlaces = useMemo(() => {
     let filtered = places;
 
     // Apply category and search filters
     const q = searchQuery.trim().toLowerCase();
     filtered = filtered.filter((p) => {
-      const matchesCategory = activeCategory === 'All' || p.category === activeCategory;
+      const matchesCategory = activeCategory === 'All' || resolveCategory(p.category) === activeCategory;
       if (!q) return matchesCategory;
       const hay = `${p.name ?? ''} ${p.description ?? ''}`.toLowerCase();
       return matchesCategory && hay.includes(q);
@@ -559,29 +583,28 @@ export default function App() {
   }, [places, activeCategory, searchQuery, showNearby, userLocation, getDistance]);
 
   const categories = useMemo(() => {
-    const cats = [...new Set(places.map((p) => p.category).filter(Boolean))];
+    const cats = [...new Set(places.map((p) => resolveCategory(p.category)).filter(Boolean))];
     return ['All', ...cats];
   }, [places]);
 
-  const getCategoryColor = (category) => config.categories[category]?.color || '#94A3B8';
-  const getCategoryIcon = (category) => config.categories[category]?.icon || MapPin;
+  const getCategoryColor = (category) => config.categories[resolveCategory(category)]?.color || '#94A3B8';
+  const getCategoryIcon = (category) => config.categories[resolveCategory(category)]?.icon || MapPin;
 
   const getCategoryEmoji = (category) => {
     const emojiMap = {
-      // Singapore
-      Landmark: '🏛️',
-      Attraction: '✨',
-      Food: '🍜',
-      Adventure: '🎢',
-      Culture: '🎭',
-      // Malaysia
-      Shopping: '🛍️',
-      // Bali
-      Temple: '🛕',
+      Sights: '🏛️',
+      Food: '🍽️',
+      Drinks: '☕',
+      Wellness: '🧖',
       Nature: '🌿',
+      Stay: '🏨',
+      // Malaysia / Bali raw categories
+      Temple: '🛕',
       Beach: '🏖️',
+      Shopping: '🛍️',
+      Adventure: '🎢',
     };
-    return emojiMap[category] || '📍';
+    return emojiMap[resolveCategory(category)] || emojiMap[category] || '📍';
   };
 
   const handleSelectPlace = (place) => {
@@ -776,7 +799,7 @@ export default function App() {
                   const isActive = activeCategory === cat;
                   const Icon = cat === 'All' ? MapPin : getCategoryIcon(cat);
                   const emoji = cat === 'All' ? '📍' : getCategoryEmoji(cat);
-                  const count = cat === 'All' ? places.length : places.filter((p) => p.category === cat).length;
+                  const count = cat === 'All' ? places.length : places.filter((p) => resolveCategory(p.category) === cat).length;
                   const color = cat === 'All' ? theme.primary : getCategoryColor(cat);
 
                   return (
@@ -915,7 +938,12 @@ export default function App() {
                   const isExpanded = expandedPlace === place.id;
                   const color = getCategoryColor(place.category);
                   const Icon = getCategoryIcon(place.category);
-                  const priceText = normalizePrice(place);
+                  const displayCategory = resolveCategory(place.category);
+                  const isAccommodation = displayCategory === 'Stay';
+                  const priceText = isAccommodation ? '' : normalizePrice(place);
+                  const videoUrl = place.video?.trim() || null;
+                  const videoEmbeddable = videoUrl ? /\.(mp4|webm|ogg)$/i.test(videoUrl) : false;
+                  const videoLabel = videoUrl?.includes('tiktok.com') ? '▶ Watch on TikTok' : (videoUrl?.includes('youtube.com') || videoUrl?.includes('youtu.be')) ? '▶ Watch on YouTube' : '▶ Watch video';
 
                   return (
                     <motion.div
@@ -951,8 +979,13 @@ export default function App() {
                           <div className="flex-1 min-w-0 pt-0.5">
                             <div className="flex items-start justify-between gap-2 mb-1">
                               <h3 className="font-bold text-[15px] leading-tight">{place.name}</h3>
+                              {isAccommodation && (
+                                <span className="mt-0.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                                  🏠 Our Hotel
+                                </span>
+                              )}
                               {priceText && (
-                                <div className={`text-xs font-bold tabular-nums px-2 py-0.5 rounded-md ${isLight ? 'bg-black/5 text-black/70' : 'bg-white/10 text-white/85'} flex-shrink-0`}>
+                                <div className={`text-xs font-bold tabular-nums px-2 py-0.5 rounded-md flex-shrink-0 ${priceText === 'Free' ? (isLight ? 'bg-emerald-100 text-emerald-700' : 'bg-emerald-900/40 text-emerald-300') : (isLight ? 'bg-black/5 text-black/70' : 'bg-white/10 text-white/70')}`}>
                                   {priceText}
                                 </div>
                               )}
@@ -1025,65 +1058,74 @@ export default function App() {
                             <div className="px-4 pb-4">
                               <div className={`rounded-2xl overflow-hidden ${isLight ? 'bg-gradient-to-br from-black/[0.02] to-black/[0.04]' : 'bg-gradient-to-br from-white/[0.03] to-white/[0.05]'} border t-border shadow-sm`}>
 
-                                {/* Category Header with Icon */}
-                                <div className="px-4 pt-3 pb-2 flex items-center gap-2 border-b t-border">
-                                  <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ backgroundColor: `${color}20` }}>
-                                    <Icon size={18} style={{ color }} />
-                                  </div>
-                                  <span className="text-xs font-extrabold uppercase tracking-wider" style={{ color }}>
-                                    {place.category}
-                                  </span>
-                                </div>
+                                {/* Minimalist Extended Place View */}
+                                <div className="p-5 flex flex-col gap-4 bg-gradient-to-br from-white/80 to-white/60 dark:from-slate-900/80 dark:to-slate-900/60">
+                                  {/* Video link (TikTok/YouTube) or direct video */}
+                                  {videoUrl && (
+                                    videoEmbeddable ? (
+                                      <div className="rounded-xl overflow-hidden aspect-video bg-black/10 border border-slate-200 dark:border-slate-800 shadow-sm">
+                                        <video src={videoUrl} controls className="w-full h-full object-cover bg-black" />
+                                      </div>
+                                    ) : (
+                                      <a
+                                        href={videoUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all hover:scale-[1.02] text-white"
+                                        style={{ background: `linear-gradient(90deg, ${color} 0%, ${theme.primary} 100%)` }}
+                                      >
+                                        <span>{videoLabel}</span>
+                                      </a>
+                                    )
+                                  )}
 
-                                {/* Content Section */}
-                                <div className="p-4 space-y-3">
-
-                                  {/* Notes/Description */}
-                                  <div>
-                                    <p className="text-sm t-muted leading-relaxed">{place.notes}</p>
-                                  </div>
-
-                                  {/* Custom Tags Section */}
-                                  <div className="space-y-2">
-                                    <div className="flex items-center gap-2">
-                                      <Tag size={14} className="t-muted2" />
-                                      <p className="text-xs font-bold t-muted2 uppercase tracking-wider">Tags</p>
+                                  {/* Category + Name */}
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm" style={{ background: `linear-gradient(135deg, ${color}22 0%, ${color}09 100%)` }}>
+                                      <Icon size={20} style={{ color }} />
                                     </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="text-xs font-bold uppercase tracking-widest" style={{ color }}>{place.category}</div>
+                                      <div className="text-lg font-extrabold leading-tight text-slate-900 dark:text-white truncate">{place.name}</div>
+                                    </div>
+                                  </div>
 
+                                  {/* Our Hotel Banner */}
+                                  {isAccommodation && (
+                                    <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40">
+                                      <span className="text-xl flex-shrink-0">🏠</span>
+                                      <div>
+                                        <div className="text-xs font-extrabold text-amber-700 dark:text-amber-300 uppercase tracking-wide">Our Hotel</div>
+                                        <div className="text-[11px] text-amber-600/80 dark:text-amber-400/80">Your accommodation for this trip</div>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Description/Notes */}
+                                  {(place.notes || place.description) && (
+                                    <div className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                                      {place.notes || place.description}
+                                    </div>
+                                  )}
+
+                                  {/* Tags */}
+                                  <div className="space-y-2">
                                     {placeTags[`${destination}_${place.id}`]?.length > 0 && (
                                       <div className="flex flex-wrap gap-1.5">
                                         {placeTags[`${destination}_${place.id}`].map((tag) => (
                                           <button
                                             key={tag}
                                             onClick={() => removeTag(place.id, tag)}
-                                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold transition-all hover:scale-105"
-                                            style={{
-                                              backgroundColor: `${color}15`,
-                                              color: color,
-                                            }}
+                                            className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold transition-all hover:opacity-70"
+                                            style={{ background: `${color}18`, color }}
                                             title="Click to remove"
                                           >
-                                            {tag}
-                                            <X size={12} />
+                                            {tag} <X size={10} />
                                           </button>
                                         ))}
                                       </div>
                                     )}
-
-                                    <div className="flex gap-2">
-                                      <input
-                                        type="text"
-                                        placeholder="Add tag (e.g., Day 1, Morning)..."
-                                        className="flex-1 px-3 py-2 rounded-lg border outline-none text-xs t-input"
-                                        onKeyPress={(e) => {
-                                          if (e.key === 'Enter' && e.target.value.trim()) {
-                                            addTag(place.id, e.target.value);
-                                            e.target.value = '';
-                                          }
-                                        }}
-                                      />
-                                    </div>
-
                                     <div className="flex flex-wrap gap-1.5">
                                       {suggestedTags
                                         .filter(tag => !placeTags[`${destination}_${place.id}`]?.includes(tag))
@@ -1092,43 +1134,48 @@ export default function App() {
                                           <button
                                             key={tag}
                                             onClick={() => addTag(place.id, tag)}
-                                            className="px-2 py-1 rounded-lg text-xs font-medium transition-all hover:scale-105"
-                                            style={{
-                                              backgroundColor: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
-                                            }}
-                                            title="Click to add"
+                                            className="px-2 py-0.5 rounded-full text-xs font-medium transition-all hover:scale-105"
+                                            style={{ background: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)' }}
                                           >
                                             + {tag}
                                           </button>
                                         ))}
                                     </div>
+                                    <input
+                                      type="text"
+                                      placeholder="Add custom tag…"
+                                      className="w-full px-3 py-1.5 rounded-xl border outline-none text-xs t-input"
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && e.target.value.trim()) {
+                                          addTag(place.id, e.target.value);
+                                          e.target.value = '';
+                                        }
+                                      }}
+                                    />
                                   </div>
 
-                                  {/* Rating & Action Row */}
-                                  <div className="flex items-center gap-2 pt-2 flex-wrap">
+                                  {/* Actions Row */}
+                                  <div className="flex items-center gap-2 pt-1 flex-wrap">
                                     {/* Rating */}
                                     {place.rating && (
-                                      <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl" style={{ backgroundColor: `${color}08` }}>
-                                        <Star size={16} className="fill-yellow-400 text-yellow-400 flex-shrink-0" />
+                                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-yellow-50 dark:bg-yellow-900/20">
+                                        <Star size={15} className="fill-yellow-400 text-yellow-400 flex-shrink-0" />
                                         <span className="text-sm font-bold tabular-nums">{place.rating.toFixed(1)}</span>
                                       </div>
                                     )}
 
-                                    {/* Visited Checkbox Button */}
+                                    {/* Visited Button */}
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         toggleVisited(place.id);
                                       }}
-                                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-md hover:scale-105"
-                                      style={{
-                                        backgroundColor: visitedPlaces[`${destination}_${place.id}`] ? theme.primary : `${color}15`,
-                                        color: visitedPlaces[`${destination}_${place.id}`] ? 'white' : 'inherit',
-                                      }}
+                                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-sm transition-all shadow-sm hover:shadow-md hover:scale-105 ${visitedPlaces[`${destination}_${place.id}`] ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white' : ''}`}
+                                      style={{ background: !visitedPlaces[`${destination}_${place.id}`] ? `${color}10` : undefined, color: !visitedPlaces[`${destination}_${place.id}`] ? color : undefined }}
                                       title={visitedPlaces[`${destination}_${place.id}`] ? 'Mark as not visited' : 'Mark as visited'}
                                     >
                                       {visitedPlaces[`${destination}_${place.id}`] ? (
-                                        <Check size={16} className="flex-shrink-0" />
+                                        <Check size={15} className="flex-shrink-0" />
                                       ) : (
                                         <div className="w-4 h-4 rounded-full border-2 flex-shrink-0" style={{ borderColor: color }} />
                                       )}
@@ -1137,21 +1184,20 @@ export default function App() {
                                       </span>
                                     </button>
 
-                                    {/* Google Maps Button */}
+                                    {/* Directions Button */}
                                     <a
                                       href={place.googleMapsUrl}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       onClick={(e) => e.stopPropagation()}
-                                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-sm text-white transition-all shadow-sm hover:shadow-md hover:scale-105 ml-auto"
-                                      style={{ backgroundColor: theme.primary }}
+                                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-sm text-white transition-all shadow-sm hover:shadow-md hover:scale-105"
+                                      style={{ background: `linear-gradient(90deg, ${color} 60%, ${theme.primary} 100%)` }}
                                       title="Open in Google Maps"
                                     >
-                                      <Navigation size={16} />
+                                      <Navigation size={15} />
                                       <span className="hidden xs:inline">Directions</span>
                                     </a>
                                   </div>
-
                                 </div>
                               </div>
                             </div>
@@ -1171,27 +1217,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-2 p-4 glass-panel rounded-2xl border shadow-2xl">
-              <div className="text-center">
-                <p className={`text-2xl font-extrabold ${isLight ? 'text-emerald-700' : 'text-emerald-200'}`}>
-                  {places.filter((p) => p.priceRange === 0).length}
-                </p>
-                <p className="text-xs t-muted2">Free spots</p>
-              </div>
-              <div className="text-center border-x t-border">
-                <p className={`text-2xl font-extrabold ${isLight ? 'text-rose-700' : 'text-rose-200'}`}>
-                  {places.filter((p) => p.category === 'Food').length}
-                </p>
-                <p className="text-xs t-muted2">Food places</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-extrabold" style={{ color: theme.primary }}>
-                  {Object.keys(config.categories).length}
-                </p>
-                <p className="text-xs t-muted2">Categories</p>
-              </div>
-            </div>
+
           </section>
 
           {/* Map */}
