@@ -111,7 +111,10 @@ function Navigation() {
                 .map(([key, dest]) => (
                   <button
                     key={key}
-                    onClick={() => setDestination(key)}
+                    onClick={() => {
+                      setDestination(key);
+                      window.dispatchEvent(new CustomEvent('trip:destination', { detail: key }));
+                    }}
                     className="px-2 py-1 rounded-md hover:bg-white/80 dark:hover:bg-slate-700 transition-all text-xs font-bold flex items-center gap-1"
                     title={`Switch to ${key}`}
                   >
