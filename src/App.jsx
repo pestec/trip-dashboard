@@ -5,7 +5,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   BedDouble,
   Bookmark,
-  Building,
   Camera,
   Check,
   ChevronDown,
@@ -19,7 +18,6 @@ import {
   Navigation,
   Palmtree,
   Search,
-  ShoppingBag,
   Sparkles,
   Star,
   Sun,
@@ -152,20 +150,36 @@ const destinations = {
       gradient: 'from-blue-400 to-yellow-300',
     },
     categories: {
-      Landmark: { icon: Building, color: '#60A5FA' },
-      Culture: { icon: Church, color: '#C084FC' },
+      Sights: { icon: Camera, color: '#60A5FA' },
       Food: { icon: Utensils, color: '#FB7185' },
-      Attraction: { icon: Sparkles, color: '#A78BFA' },
-      Shopping: { icon: ShoppingBag, color: '#F59E0B' },
+      Drinks: { icon: Sun, color: '#FCD34D' },
+      Wellness: { icon: Sparkles, color: '#E879F9' },
+      Nature: { icon: TreePine, color: '#34D399' },
+      Stay: { icon: BedDouble, color: '#F97316' },
+    },
+    categoryMap: {
+      Landmark: 'Sights',
+      Attraction: 'Sights',
+      Culture: 'Sights',
+      Shopping: 'Sights',
+      Restaurant: 'Food',
+      'Hawker Centre': 'Food',
+      Coffee: 'Drinks',
+      Spa: 'Wellness',
+      Garden: 'Nature',
+      Park: 'Nature',
+      Hotel: 'Stay',
+      Accommodation: 'Stay',
     },
   },
   bali: {
     name: 'Bali',
     flag: 'ID',
     currency: 'IDR',
+    currencyMultiplier: 1000,
     timezone: 'GMT+8',
     timezoneOffset: 8,
-    center: [-8.4095, 115.1889],
+    center: [-8.6505, 115.2126],
     zoom: 10,
     dataFile: 'bali.csv',
     theme: {
@@ -174,11 +188,20 @@ const destinations = {
       gradient: 'from-teal-400 to-yellow-300',
     },
     categories: {
-      Temple: { icon: Church, color: '#C084FC' },
-      Nature: { icon: Mountain, color: '#34D399' },
-      Beach: { icon: Waves, color: '#60A5FA' },
-      Adventure: { icon: Ticket, color: '#F59E0B' },
-      Culture: { icon: Church, color: '#A78BFA' },
+      Sights: { icon: Camera, color: '#60A5FA' },
+      Food: { icon: Utensils, color: '#FB7185' },
+      Drinks: { icon: Sun, color: '#FCD34D' },
+      Wellness: { icon: Sparkles, color: '#E879F9' },
+      Nature: { icon: TreePine, color: '#34D399' },
+      Stay: { icon: BedDouble, color: '#F97316' },
+    },
+    categoryMap: {
+      Temple: 'Sights',
+      Culture: 'Sights',
+      Beach: 'Sights',
+      Adventure: 'Sights',
+      Hotel: 'Stay',
+      Accommodation: 'Stay',
     },
   },
 };
@@ -299,6 +322,7 @@ export default function App() {
 
   const [fx, setFx] = useState({ loading: true, rate: null, asOf: null });
   const [localAmount, setLocalAmount] = useState('');
+  const [fxThousands, setFxThousands] = useState(() => (destinations[destination]?.currencyMultiplier || 1) > 1);
 
   const mapRef = useRef(null);
 
@@ -354,6 +378,7 @@ export default function App() {
   // Reset calculator when destination changes
   useEffect(() => {
     setLocalAmount('');
+    setFxThousands((config.currencyMultiplier || 1) > 1);
   }, [destination]);
 
   // FX rate: 1 local currency -> GBP
@@ -401,19 +426,22 @@ export default function App() {
     return () => ac.abort();
   }, [config.currency]);
 
+  const multiplier = config.currencyMultiplier || 1;
+  const activeMultiplier = fxThousands ? multiplier : 1;
+
   const fxLabel = useMemo(() => {
-    if (fx.loading) return `1 ${config.currency} → GBP…`;
+    if (fx.loading) return `1${fxThousands ? 'k' : ''} ${config.currency} → GBP…`;
     if (!fx.rate) return 'FX unavailable';
-    return `1 ${config.currency} ≈ ${formatGbp(fx.rate)}`;
-  }, [fx.loading, fx.rate, config.currency]);
+    return `1${fxThousands ? 'k' : ''} ${config.currency} ≈ ${formatGbp(fx.rate * activeMultiplier)}`;
+  }, [fx.loading, fx.rate, config.currency, fxThousands, activeMultiplier]);
 
   const localParsed = useMemo(() => parseNumberLoose(localAmount), [localAmount]);
   const gbpCalculated = useMemo(() => {
     if (!fx.rate) return null;
     if (!Number.isFinite(fx.rate)) return null;
     if (localParsed == null) return null;
-    return localParsed * fx.rate;
-  }, [fx.rate, localParsed]);
+    return localParsed * activeMultiplier * fx.rate;
+  }, [fx.rate, localParsed, activeMultiplier]);
 
   const gbpCalcLabel = useMemo(() => {
     if (!localAmount) return '£0.00';
@@ -764,6 +792,19 @@ export default function App() {
                   aria-label="Local currency amount"
                   title={fx.asOf ? `Exchange rate as of ${fx.asOf}` : undefined}
                 />
+                {multiplier > 1 && (
+                  <button
+                    onClick={() => setFxThousands(prev => !prev)}
+                    className={`text-xs font-bold flex-shrink-0 px-1.5 py-0.5 rounded transition-all ${
+                      fxThousands
+                        ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300'
+                        : 'bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-500 line-through'
+                    }`}
+                    title={fxThousands ? 'Tap to use exact amounts' : 'Tap to input in thousands'}
+                  >
+                    ,000
+                  </button>
+                )}
                 <span className="text-xs t-muted3 flex-shrink-0">≈</span>
                 <span className="text-sm font-bold t-muted tabular-nums min-w-[60px] text-right">{gbpCalcLabel}</span>
               </div>

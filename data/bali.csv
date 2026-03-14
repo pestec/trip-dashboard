@@ -1,16 +1,46 @@
-id,name,description,price,priceRange,lat,lng,notes,category,googleMapsUrl
-1,Tanah Lot Temple,Iconic sea temple on rock,IDR 60k,1,-8.6212,115.0867,Best at sunset; can get crowded.,Temple,https://www.google.com/maps/search/Tanah+Lot+Temple+Bali
-2,Uluwatu Temple,Clifftop temple with monkeys,IDR 50k,1,-8.8291,115.0849,Kecak fire dance at sunset is must-see.,Temple,https://www.google.com/maps/search/Uluwatu+Temple+Bali
-3,Tegallalang Rice Terraces,Stunning green rice paddies,IDR 15k,0,-8.4312,115.2792,Go early morning to avoid crowds and heat.,Nature,https://www.google.com/maps/search/Tegallalang+Rice+Terraces+Bali
-4,Ubud Monkey Forest,Sacred forest with macaques,IDR 80k,1,-8.5186,115.2588,Hide belongings; monkeys grab everything!,Nature,https://www.google.com/maps/search/Sacred+Monkey+Forest+Ubud
-5,Tirta Empul Temple,Holy water spring temple,IDR 50k,1,-8.4153,115.3153,Bring sarong for purification ritual.,Temple,https://www.google.com/maps/search/Tirta+Empul+Temple+Bali
-6,Seminyak Beach,Trendy beach with beach clubs,Free,0,-8.6914,115.1564,Great for sunset drinks; Potato Head club nearby.,Beach,https://www.google.com/maps/search/Seminyak+Beach+Bali
-7,Nusa Penida,Island with dramatic cliffs,IDR 200k boat,2,-8.7275,115.5444,Day trip; Kelingking Beach is iconic.,Nature,https://www.google.com/maps/search/Nusa+Penida+Bali
-8,Ubud Art Market,Traditional crafts market,Free,0,-8.5069,115.2625,Bargain expected; best prices early morning.,Shopping,https://www.google.com/maps/search/Ubud+Art+Market+Bali
-9,Kuta Beach,Popular tourist beach,Free,0,-8.7184,115.1686,Good for surfing beginners; can be crowded.,Beach,https://www.google.com/maps/search/Kuta+Beach+Bali
-10,Waterbom Bali,Water park,IDR 535k,3,-8.7265,115.1693,Book online for discounts; full day needed.,Adventure,https://www.google.com/maps/search/Waterbom+Bali
-11,Mount Batur Sunrise,Volcano sunrise trek,IDR 500k,2,-8.2414,115.3753,Start at 2am; guide required; bring warm clothes.,Adventure,https://www.google.com/maps/search/Mount+Batur+Bali
-12,Besakih Temple,Largest Hindu temple in Bali,IDR 60k,1,-8.3744,115.4517,Mother Temple; hire official guide only.,Temple,https://www.google.com/maps/search/Besakih+Temple+Bali
-13,La Favela,Trendy restaurant and bar,IDR 200-400k,2,-8.6866,115.1617,Great for dinner and nightlife; book ahead.,Food,https://www.google.com/maps/search/La+Favela+Bali
-14,Warung Babi Guling Ibu Oka,Famous roast pork,IDR 50-80k,1,-8.5062,115.2628,Anthony Bourdain favorite; lunch only.,Food,https://www.google.com/maps/search/Warung+Babi+Guling+Ibu+Oka+Ubud
-15,Canggu,Hip area with cafes and surf,Free,0,-8.6478,115.1385,Best for digital nomads; great coffee scene.,Beach,https://www.google.com/maps/search/Canggu+Bali
+id,name,description,price,priceRange,lat,lng,notes,category,googleMapsUrl,video
+1,Jack's Coffee,Popular coffee stop in central Uluwatu,,0,-8.8138956,115.1101024,,Drinks,https://www.google.com/maps/search/Jack%27s+Coffee+Uluwatu,
+2,Balangan Beach,Scenic cliff-backed beach known for surf views,,0,-8.7920478,115.1234172,,Sights,https://www.google.com/maps/search/Balangan+Beach+Bali,
+3,Bambu,Relaxed restaurant and café in Uluwatu,,0,-8.8115051,115.1138813,,Food,https://www.google.com/maps/search/Bambu+Cafe+Restaurant+Uluwatu,
+4,Tegallalang Rice Terrace,Iconic rice terraces with jungle views and swings,,0,-8.4347383,115.2790397,Best paired with swing activity.,Sights,https://www.google.com/maps/search/Tegallalang+Rice+Terrace+Bali,
+5,Kanto Lampo Waterfall,Popular stepped waterfall near Ubud,,0,-8.5325074,115.3328613,Can get busy later in the day.,Sights,https://www.google.com/maps/search/Kanto+Lampo+Waterfall+Bali,
+6,Tropical Temptation,Clifftop adult-only beach club near Melasti,,0,-8.8481485,115.1603641,Not in the main Uluwatu centre.,Sights,https://www.google.com/maps/search/Tropical+Temptation+Bali,
+7,Taman Dedari,Riverside restaurant and sunset dinner spot near Ubud,,0,-8.4751788,115.2450829,Good for late afternoon into sunset.,Food,https://www.google.com/maps/search/Taman+Dedari+Ubud,
+8,Cretya Ubud,Jungle day-club style restaurant with pools and rice terrace views,,0,-8.4399620,115.2809820,Restaurant with a pool.,Food,https://www.google.com/maps/search/Cretya+Ubud,
+9,BAKED. Uluwatu,Stylish bakery and coffee stop in Uluwatu,,0,-8.8165520,115.0928995,,Drinks,https://www.google.com/maps/search/BAKED.+Uluwatu,
+10,Fold Ubud,Modern café and brunch spot in Ubud,,0,-8.5189570,115.2631950,Best croissant cereal.,Food,https://www.google.com/maps/search/Fold+Ubud,
+11,Melasti Beach,Wide white-sand beach with dramatic limestone cliffs,,0,-8.8482935,115.1631697,Best in the morning before beach clubs.,Sights,https://www.google.com/maps/search/Melasti+Beach+Bali,
+12,Batuan Temple,Traditional Balinese temple complex near Ubud,,0,-8.5822580,115.2757489,,Sights,https://www.google.com/maps/search/Batuan+Temple+Bali,
+13,Palmilla Bali Beach Club,Beach club near Melasti with pools and sea views,,0,-8.8478506,115.1578120,,Sights,https://www.google.com/maps/search/Palmilla+Bali+Beach+Club,
+14,AVLI modern greek,Modern Greek restaurant in Uluwatu,,0,-8.8165625,115.0958125,,Food,https://www.google.com/maps/search/AVLI+modern+greek+Uluwatu,
+15,Bali Bird Park,Large bird park and zoo-style attraction near Ubud,,0,-8.5996431,115.2520569,,Sights,https://www.google.com/maps/search/Bali+Bird+Park,
+16,Padang Padang Beach,Small famous beach in a cove below the cliffs,,0,-8.8111377,115.1037658,,Sights,https://www.google.com/maps/search/Padang+Padang+Beach+Bali,
+17,Suluban Beach,Cliff-access surf beach near Blue Point in Uluwatu,,0,-8.8160171,115.0882875,Access includes steps and rock passages.,Sights,https://www.google.com/maps/search/Suluban+Beach+Bali,
+18,Milk & Madu Uluwatu,Popular brunch and coffee place in Uluwatu,,0,-8.8130910,115.1077342,,Drinks,https://www.google.com/maps/search/Milk+%26+Madu+Uluwatu,
+19,Lolita's Cantina Mexicana,Mexican restaurant good for sunset drinks and dinner,,0,-8.8147596,115.0886939,Sunset spot.,Food,https://www.google.com/maps/search/Lolitas+Cantina+Mexicana+Uluwatu,
+20,The Cashew Tree,Laid-back healthy café and restaurant near Bingin,,0,-8.8069028,115.1170548,,Food,https://www.google.com/maps/search/The+Cashew+Tree+Uluwatu,
+21,Hedonist Space,Stylish dinner and lounge venue in the south peninsula,,0,-8.8204446,115.1506066,Best for dinner.,Food,https://www.google.com/maps/search/Hedonist+Space+Bali,
+22,MASONRY. Restaurant Uluwatu,Trendy slightly upscale restaurant in Uluwatu,,0,-8.8165104,115.0925746,A bit posh.,Food,https://www.google.com/maps/search/Masonry+Restaurant+Uluwatu,
+23,Sinamon Bali Uluwatu,Dessert and pastry café in Uluwatu,,0,-8.8184876,115.1154550,Dessert stop.,Drinks,https://www.google.com/maps/search/Sinamon+Bali+Uluwatu,
+24,Single Fin Bali,Iconic cliffside restaurant and bar above Suluban,,0,-8.8148568,115.0888711,Good for sunset or drinks.,Food,https://www.google.com/maps/search/Single+Fin+Bali,
+25,Koral,Underwater-style aquarium restaurant in Nusa Dua,,0,-8.8295942,115.2172021,Underwater restaurant.,Food,https://www.google.com/maps/search/Koral+Bali,
+26,YUKI Uluwatu,Modern Japanese restaurant and social dining venue,,0,-8.8170910,115.0939776,,Food,https://www.google.com/maps/search/YUKI+Uluwatu,
+27,STOCKxSNEAKERS.ID,Sneaker shopping stop in Bali,,0,-8.6850447,115.2127894,,Sights,https://www.google.com/maps/search/STOCKxSNEAKERS.ID+Bali,
+28,KAFE UBUD,Well-known healthy café in central Ubud,,0,,,,Drinks,https://www.google.com/maps/search/KAFE+UBUD+Ubud,
+29,FRIENDS CAFE,Casual coffee stop in Ubud,,0,,,,Drinks,https://www.google.com/maps/search/FRIENDS+CAFE+Ubud,
+30,CLOVER CAFE,Coffee and brunch café in Ubud,,0,,,,Drinks,https://www.google.com/maps/search/CLOVER+CAFE+Ubud,
+31,SUKA ESPRESSO,Coffee and breakfast café in Ubud,,0,,,,Drinks,https://www.google.com/maps/search/SUKA+ESPRESSO+Ubud,
+32,MAMU GARDEN,Garden-style café in Ubud,,0,,,,Drinks,https://www.google.com/maps/search/MAMU+GARDEN+Ubud,
+33,BEE CAFE,Coffee stop in Ubud,,0,,,,Drinks,https://www.google.com/maps/search/BEE+CAFE+Ubud,
+34,NAMASKARA,Café spot in Ubud,,0,,,,Drinks,https://www.google.com/maps/search/NAMASKARA+Ubud,
+35,IVY CAFE,Café and light food stop in Ubud,,0,,,,Drinks,https://www.google.com/maps/search/IVY+CAFE+Ubud,
+36,MELALI,Coffee stop in Ubud,,0,,,,Drinks,https://www.google.com/maps/search/MELALI+Ubud,
+37,TUJU Tropic Club & Dining Ubud,Tropical club-style restaurant and pool venue in Ubud,,0,-8.4979938,115.2652663,Nice restaurant.,Food,https://www.google.com/maps/search/TUJU+Tropic+Club+Dining+Ubud,
+38,The Jungle Club Ubud,Day club and dining spot with jungle views,,0,-8.5921987,115.2688169,Nice restaurant.,Sights,https://www.google.com/maps/search/The+Jungle+Club+Ubud,
+39,Tibumana Waterfall,Scenic jungle waterfall east of Ubud,,0,-8.5111530,115.3225750,Best paired with Kanto Lampo on a car tour.,Sights,https://www.google.com/maps/search/Tibumana+Waterfall+Bali,
+40,Garuda Wisnu Kencana Cultural Park,Large cultural park with monumental statue and sunset views,,0,-8.8101330,115.1672740,Best final stop before Uluwatu drop-off.,Sights,https://www.google.com/maps/search/Garuda+Wisnu+Kencana+Cultural+Park,
+41,Sundays Beach Club,Private-access beach club with afternoon and sunset vibe,,0,-8.8413220,115.1370710,Best in the afternoon into sunset.,Sights,https://www.google.com/maps/search/Sundays+Beach+Club+Bali,
+42,Savaya Bali,High-end cliffside beach club and nightlife venue,,0,-8.8470330,115.1542200,Best booked in advance for evening events.,Sights,https://www.google.com/maps/search/Savaya+Bali,
+43,Buana Driver Bali,Private driver contact for Bali day tours,,0,,,,Service provider rather than a place.,Sights,,
+44,Kaamala Resort & Spa Ubud,Boutique resort and spa in the Ubud jungle,,0,-8.5162845,115.2559374,,Stay,https://www.google.com/maps/place/Kaamala+Resort+%26+Spa+Ubud+by+iNi+Vie+Hospitality/@-8.5162792,115.2533625,17z/data=!4m11!3m10!1s0x2dd23d9efd543713:0xf8adf658c4f0fc16!5m4!1s2026-04-07!2i3!4m1!1i2!8m2!3d-8.5162845!4d115.2559374!16s%2Fg%2F11fq8xyt9h?entry=ttu&g_ep=EgoyMDI2MDIxOC4wIKXMDSoASAFQAw%3D%3D,
+45,Dolce x The Young Villas,Private villa stay in Uluwatu,,0,-8.811818,115.1228975,,Stay,https://www.google.com/maps/place/Dolce+x+The+Young+Villas/@-8.8184047,115.1070568,4551m/data=!3m1!1e3!4m11!3m10!1s0x2dd245c8df25f319:0x8e06a4d1aa987cc7!5m4!1s2026-04-07!2i3!4m1!1i2!8m2!3d-8.811818!4d115.1228975!16s%2Fg%2F11vybb_0b2?entry=ttu&g_ep=EgoyMDI2MDMxMS4wIKXMDSoASAFQAw%3D%3D,
