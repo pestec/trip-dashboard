@@ -63,10 +63,10 @@ function Navigation() {
   };
 
   return (
-    <nav className="sticky top-0 z-[2000] bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 shadow-sm">
+    <nav className="sticky top-0 z-[2000] bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
       <div className="mx-auto max-w-7xl px-2 sm:px-4">
         <div className="flex items-center justify-between h-12 sm:h-14">
-          <div className="flex items-center gap-1 sm:gap-3 md:gap-6">
+          <div className="flex items-center gap-0.5 xs:gap-1 sm:gap-3 md:gap-6">
             <Link
               to="/"
               className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg font-bold text-xs sm:text-sm transition-all ${
@@ -75,8 +75,8 @@ function Navigation() {
                   : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
-              <Map size={16} className="sm:w-[18px] sm:h-[18px]" />
-              <span className="text-[10px] sm:text-sm">Dashboard</span>
+              <Map size={16} className="sm:w-[18px] sm:h-[18px] flex-shrink-0" />
+              <span className="hidden sm:inline">Places</span>
             </Link>
             <Link
               to="/itinerary"
@@ -86,8 +86,8 @@ function Navigation() {
                   : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
-              <Calendar size={16} className="sm:w-[18px] sm:h-[18px]" />
-              <span className="text-[10px] sm:text-sm">Itinerary</span>
+              <Calendar size={16} className="sm:w-[18px] sm:h-[18px] flex-shrink-0" />
+              <span className="hidden sm:inline">Itinerary</span>
             </Link>
             <Link
               to="/budget"
@@ -97,13 +97,13 @@ function Navigation() {
                   : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
-              <Calculator size={16} className="sm:w-[18px] sm:h-[18px]" />
-              <span className="text-[10px] sm:text-sm">Budget</span>
+              <Calculator size={16} className="sm:w-[18px] sm:h-[18px] flex-shrink-0" />
+              <span className="hidden sm:inline">Budget</span>
             </Link>
           </div>
 
           {/* Right: Destinations + Theme */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             {/* Destinations */}
             <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-lg p-0.5">
               {Object.entries(destinations)
@@ -115,11 +115,11 @@ function Navigation() {
                       setDestination(key);
                       window.dispatchEvent(new CustomEvent('trip:destination', { detail: key }));
                     }}
-                    className="px-2 py-1 rounded-md hover:bg-white/80 dark:hover:bg-slate-700 transition-all text-xs font-bold flex items-center gap-1"
+                    className="px-1.5 py-1 rounded-md hover:bg-white/80 dark:hover:bg-slate-700 transition-all text-sm font-bold flex items-center gap-0.5"
                     title={`Switch to ${key}`}
                   >
                     <span>{dest.flag}</span>
-                    <span className="hidden sm:inline">{dest.name}</span>
+                    <span className="hidden sm:inline text-xs">{dest.name}</span>
                   </button>
                 ))}
             </div>
@@ -127,7 +127,7 @@ function Navigation() {
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex-shrink-0"
+              className="flex items-center justify-center w-7 h-7 sm:w-9 sm:h-9 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex-shrink-0"
               title={isLight ? 'Switch to dark mode' : 'Switch to light mode'}
             >
               {isLight ? (

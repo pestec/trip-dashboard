@@ -52,7 +52,8 @@ const tripData = {
         '11:15–12:00 — Marina Bay waterfront walk',
         '12:00–12:30 — Helix Bridge',
         '12:45–14:30 — The Shoppes at Marina Bay Sands + lunch',
-        '15:00–18:30 — Gardens by the Bay',
+        '14:30–15:45 — Flower Dome & Cloud Forest',
+        '16:00–18:30 — Gardens by the Bay',
         '19:00–21:00 — Dinner around Marina Bay',
       ] },
       { date: '3 Apr', dayOfWeek: 'Friday', activities: [
