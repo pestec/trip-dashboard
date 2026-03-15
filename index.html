@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Favicons (paths are root-relative; Vite prepends base during build) -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/trip-dashboard/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/trip-dashboard/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/trip-dashboard/apple-touch-icon.png" />
+    <link rel="manifest" href="/trip-dashboard/site.webmanifest" />
+    <script>
+      // Restore path after GitHub Pages 404 redirect (see public/404.html)
+      (function(l) {
+        if (l.search[1] === '/') {
+          var decoded = l.search.slice(1).split('&').map(function(s) {
+            return s.replace(/~and~/g, '&');
+          });
+          window.history.replaceState(null, null,
+            l.pathname.slice(0, -1) + decoded[0] +
+            (decoded[1] ? '&' + decoded[1].slice(2) : '') +
+            l.hash
+          );
+        }
+      }(window.location));
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#0F0F0F" />
+    <meta name="description" content="Interactive trip dashboard for Singapore, Malaysia, and Bali" />
+    <title>Trip Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script type="module" crossorigin src="/trip-dashboard/assets/index-Bl3TVTcR.js"></script>
+    <link rel="stylesheet" crossorigin href="/trip-dashboard/assets/index-CS-NQbD_.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
