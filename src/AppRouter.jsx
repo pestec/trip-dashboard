@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { HashRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Calculator, Map, Moon, Sun, Calendar } from 'lucide-react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, Outlet } from 'react-router-dom';
+import { Calculator, Map, Moon, Sun, Calendar, LogOut } from 'lucide-react';
 import Dashboard from './Dashboard';
 import Budget from './Budget';
 import Itinerary from './Itinerary';
+import LoginPage from './components/LoginPage';
+import ProtectedRoute from './components/ProtectedRoute';
+import { useAuth } from './context/AuthContext';
 
 function Navigation() {
   const location = useLocation();
   const isDashboard = location.pathname === '/' || location.pathname === '';
   const isBudget = location.pathname === '/budget';
   const isItinerary = location.pathname === '/itinerary';
+  const { signOut } = useAuth();
 
   // Theme/color mode state
   const [colorMode, setColorMode] = useState(() => {
@@ -136,6 +140,15 @@ function Navigation() {
                 <Sun size={16} className="sm:w-[18px] sm:h-[18px] text-yellow-400" />
               )}
             </button>
+
+            {/* Sign Out */}
+            <button
+              onClick={signOut}
+              className="flex items-center justify-center w-7 h-7 sm:w-9 sm:h-9 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex-shrink-0"
+              title="Sign out"
+            >
+              <LogOut size={16} className="sm:w-[18px] sm:h-[18px] text-slate-500 dark:text-slate-400" />
+            </button>
           </div>
         </div>
       </div>
@@ -143,14 +156,27 @@ function Navigation() {
   );
 }
 
+function AppLayout() {
+  return (
+    <>
+      <Navigation />
+      <Outlet />
+    </>
+  );
+}
+
 export default function AppRouter() {
   return (
-    <Router>
-      <Navigation />
+    <Router basename="/trip-dashboard">
       <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/itinerary" element={<Itinerary />} />
-        <Route path="/budget" element={<Budget />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/itinerary" element={<Itinerary />} />
+            <Route path="/budget" element={<Budget />} />
+          </Route>
+        </Route>
       </Routes>
     </Router>
   );
