@@ -4,26 +4,31 @@
 // Required Supabase tables (run once in Supabase SQL editor):
 //
 //   CREATE TABLE IF NOT EXISTS budget_daily (
-//     day_date   TEXT PRIMARY KEY,
+//     user_id    UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+//     day_date   TEXT,
 //     food       DECIMAL(10,2) DEFAULT 0,
 //     activities DECIMAL(10,2) DEFAULT 0,
-//     updated_at TIMESTAMPTZ   DEFAULT NOW()
+//     updated_at TIMESTAMPTZ   DEFAULT NOW(),
+//     PRIMARY KEY (user_id, day_date)
 //   );
 //
 //   CREATE TABLE IF NOT EXISTS budget_settings (
-//     key   TEXT PRIMARY KEY,
-//     value DECIMAL(10,2) NOT NULL DEFAULT 0
+//     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+//     key     TEXT,
+//     value   DECIMAL(10,2) NOT NULL DEFAULT 0,
+//     PRIMARY KEY (user_id, key)
 //   );
 //
 //   ALTER TABLE budget_daily    ENABLE ROW LEVEL SECURITY;
 //   ALTER TABLE budget_settings ENABLE ROW LEVEL SECURITY;
-//   CREATE POLICY "auth users" ON budget_daily    FOR ALL USING (auth.role() = 'authenticated');
-//   CREATE POLICY "auth users" ON budget_settings FOR ALL USING (auth.role() = 'authenticated');
+//   CREATE POLICY "owner" ON budget_daily    FOR ALL USING (user_id = auth.uid());
+//   CREATE POLICY "owner" ON budget_settings FOR ALL USING (user_id = auth.uid());
 // =============================================================================
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Plane, Home, Utensils, Zap } from 'lucide-react';
 import { supabase } from './lib/supabase';
+import { useAuth } from './context/AuthContext';
 
 // ── Fixed flight costs (per person) ─────────────────────────────────────────
 const FLIGHT_COSTS_PP = [
@@ -63,6 +68,8 @@ const TRIP_DAYS = [
   { date: '12 Apr', key: '2026-04-12', day: 'Sun', location: 'Uluwatu',          flag: '🇮🇩' },
   { date: '13 Apr', key: '2026-04-13', day: 'Mon', location: 'Uluwatu',          flag: '🇮🇩' },
   { date: '14 Apr', key: '2026-04-14', day: 'Tue', location: 'Uluwatu → SIN',    flag: '🇮🇩' },
+  { date: '15 Apr', key: '2026-04-15', day: 'Wed', location: 'Singapore',        flag: '🇸🇬' },
+  { date: '16 Apr', key: '2026-04-16', day: 'Thu', location: 'Singapore → LHR', flag: '🇸🇬' },
 ];
 
 const DEFAULT_TOTAL_BUDGET = 5000;
@@ -75,6 +82,9 @@ const initDaily = () => {
 };
 
 export default function Budget() {
+  const { session } = useAuth();
+  const userId = session?.user?.id;
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState({});
   const [totalBudget, setTotalBudget] = useState(DEFAULT_TOTAL_BUDGET);
@@ -83,13 +93,16 @@ export default function Budget() {
 
   // ── Load from Supabase ──────────────────────────────────────────────────────
   useEffect(() => {
+    if (!userId) return;
     async function load() {
       setLoading(true);
       try {
-        const [{ data: settings }, { data: daily }] = await Promise.all([
-          supabase.from('budget_settings').select('*'),
-          supabase.from('budget_daily').select('*'),
+        const [{ data: settings, error: sErr }, { data: daily, error: dErr }] = await Promise.all([
+          supabase.from('budget_settings').select('*').eq('user_id', userId),
+          supabase.from('budget_daily').select('*').eq('user_id', userId),
         ]);
+        if (sErr) console.error('budget_settings load error:', sErr.message);
+        if (dErr) console.error('budget_daily load error:', dErr.message);
 
         if (settings) {
           const row = settings.find((s) => s.key === 'total_budget');
@@ -121,34 +134,38 @@ export default function Budget() {
       }
     }
     load();
-  }, []);
+  }, [userId]);
 
   // ── Supabase save helpers ───────────────────────────────────────────────────
   const saveSetting = useCallback(async (key, value) => {
+    if (!userId) return;
     try {
-      await supabase
+      const { error } = await supabase
         .from('budget_settings')
-        .upsert({ key, value: parseFloat(value) || 0 }, { onConflict: 'key' });
+        .upsert({ user_id: userId, key, value: parseFloat(value) || 0 }, { onConflict: 'user_id,key' });
+      if (error) console.error('Failed to save setting:', error.message);
     } catch (e) {
       console.error('Failed to save setting:', e);
     }
-  }, []);
+  }, [userId]);
 
   const saveDayEntry = useCallback(async (dayKey, food, activities) => {
+    if (!userId) return;
     setSaving((prev) => ({ ...prev, [dayKey]: true }));
     try {
-      await supabase
+      const { error } = await supabase
         .from('budget_daily')
         .upsert(
-          { day_date: dayKey, food: parseFloat(food) || 0, activities: parseFloat(activities) || 0 },
-          { onConflict: 'day_date' }
+          { user_id: userId, day_date: dayKey, food: parseFloat(food) || 0, activities: parseFloat(activities) || 0 },
+          { onConflict: 'user_id,day_date' }
         );
+      if (error) console.error('Failed to save daily entry:', error.message);
     } catch (e) {
       console.error('Failed to save daily entry:', e);
     } finally {
       setSaving((prev) => ({ ...prev, [dayKey]: false }));
     }
-  }, []);
+  }, [userId]);
 
   // ── Local state helpers ─────────────────────────────────────────────────────
   const updateDay = useCallback((dayKey, field, value) => {

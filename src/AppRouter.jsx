@@ -13,7 +13,7 @@ function Navigation() {
   const isDashboard = location.pathname === '/' || location.pathname === '';
   const isBudget = location.pathname === '/budget';
   const isItinerary = location.pathname === '/itinerary';
-  const { signOut } = useAuth();
+  const { signOut, session } = useAuth();
 
   // Theme/color mode state
   const [colorMode, setColorMode] = useState(() => {
@@ -142,13 +142,15 @@ function Navigation() {
             </button>
 
             {/* Sign Out */}
-            <button
-              onClick={signOut}
-              className="flex items-center justify-center w-7 h-7 sm:w-9 sm:h-9 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex-shrink-0"
-              title="Sign out"
-            >
-              <LogOut size={16} className="sm:w-[18px] sm:h-[18px] text-slate-500 dark:text-slate-400" />
-            </button>
+            {session && (
+              <button
+                onClick={signOut}
+                className="flex items-center justify-center w-7 h-7 sm:w-9 sm:h-9 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex-shrink-0"
+                title="Sign out"
+              >
+                <LogOut size={16} className="sm:w-[18px] sm:h-[18px] text-slate-500 dark:text-slate-400" />
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -170,10 +172,10 @@ export default function AppRouter() {
     <Router basename="/trip-dashboard">
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route element={<ProtectedRoute />}>
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/itinerary" element={<Itinerary />} />
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/itinerary" element={<Itinerary />} />
+          <Route element={<ProtectedRoute />}>
             <Route path="/budget" element={<Budget />} />
           </Route>
         </Route>

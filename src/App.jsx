@@ -290,7 +290,7 @@ export default function App() {
       const saved = localStorage.getItem('trip_theme');
       if (saved === 'light' || saved === 'dark') return saved;
     } catch {}
-    return 'light';
+    return 'dark';
   });
 
   const [visitedPlaces, setVisitedPlaces] = useState(() => {
