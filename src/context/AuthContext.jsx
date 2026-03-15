@@ -7,6 +7,12 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(undefined); // undefined = still loading
 
   useEffect(() => {
+    const url = import.meta.env.VITE_SUPABASE_URL;
+    if (!url || url === 'https://your-project-id.supabase.co') {
+      // Env vars not configured — skip auth, stay on login page
+      setSession(null);
+      return;
+    }
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session ?? null);
     }).catch(() => {
